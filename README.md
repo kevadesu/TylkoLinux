@@ -12,4 +12,4 @@ LFS v12.2-systemd book chapter: 2.2.
 
 ## Contributing
 I don't know what else to type lol just open a PR when this project is done
-### What would also help is to report any security vulnerability and/or bugs found on https://www.linuxfromscratch.org/lfs/errata/12.2-systemd/ in the Issues tab
+#### What would also help is to report any security vulnerability and/or bugs found on https://www.linuxfromscratch.org/lfs/errata/12.2-systemd/ in the Issues tab

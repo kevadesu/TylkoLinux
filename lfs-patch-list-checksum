@@ -1,0 +1,5 @@
+6a5ac7e89b791aae556de0f745916f7f  bzip2-1.0.8-install_docs-1.patch
+58961caf5bbdb02462591fa506c73b6d  coreutils-9.5-i18n-2.patch
+0b8b5ac411d011263ad40b0664c669f0  expect-5.45.4-gcc14-1.patch
+9a5997c3452909b1769918c759eff8a2  glibc-2.40-fhs-1.patch
+f75cca16a38da6caa7d52151f7136895  kbd-2.6.4-backspace-1.patch

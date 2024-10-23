@@ -2,7 +2,7 @@
 TylkoLinux, an LFS system
 
 ## Status
-LFS v12.2-systemd book chapter: 3.1.
+LFS v12.2-systemd book chapter: 4.2.
 
 ## To do
 ```md

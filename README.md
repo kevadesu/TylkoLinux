@@ -7,7 +7,7 @@ LFS v12.2-systemd book chapter: 4.2.
 ## To do
 ```md
 [ ] Make a package manager
-[X] Finish the project in the first place
+[ ] Finish the project in the first place
 ```
 
 ## Contributing

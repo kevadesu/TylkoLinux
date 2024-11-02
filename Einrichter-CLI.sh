@@ -154,6 +154,11 @@ function einrichter.installer.SafeUser() {
     chmod -v +x /home/lfs/Einrichter-as-LFS.sh
     echo -e "${BBlue}[i] ${Blue}Moving the host's bash.bashrc file aside if found... (THIS WILL BE RESTORED AFTER THE END OF THE INSTALLATION!)${Color_Off}"
     [ ! -e /etc/bash.bashrc ] || mv -v /etc/bash.bashrc /etc/bash.bashrc.NOUSE
+    echo -e "${BBlue}[i] ${Blue}Assigning permissions to the user lfs for the drive ${LFS}...${Color_Off}"
+    chown -v lfs $LFS/{usr{,/*},lib,var,etc,bin,sbin,tools}
+    case $(uname -m) in
+      x86_64) chown -v lfs $LFS/lib64 ;;
+    esac
     echo -e "${BBlue}[i] ${Blue}Attempting login as lfs...${Color_Off}"
     echo -e "${BBlue}[i] ${Blue}You are about to switch to the LFS user. When you log in, run the Einrichter-as-LFS.sh script located in your home directory by typing \"./Einrichter-as-LFS.sh\".${Color_Off}"
     su - lfs
@@ -168,6 +173,7 @@ chown --from lfs -R root:root $LFS/{usr,lib,var,etc,bin,sbin,tools}
       x86_64) chown --from lfs -R root:root $LFS/lib64 ;;
     esac
 }
+
 function einrichter.installer.bg() {
     
 }

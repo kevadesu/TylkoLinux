@@ -169,7 +169,38 @@ function eal.install.cross-toolchain() {
                     echo "OK"
                 ;;
             esac
+        popd
+        pushd $LFS/sources/gcc/
+            mkdir -v build
+            cd       build
+            EIR_PKG=libstdcpp
+            eal.notification.buildconf
+            ../libstdc++-v3/configure           \
+                --host=$LFS_TGT                 \
+                --build=$(../config.guess)      \
+                --prefix=/usr                   \
+                --disable-multilib              \
+                --disable-nls                   \
+                --disable-libstdcxx-pch         \
+                --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/14.2.0
+            eal.notification.compiling
+            make
+            eal.notification.installing
+            make DESTDIR=$LFS install
+            rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
+        popd
+        EIR_PKG=M4
+        tar -xvf m4-1.4.19.tar.xz
+        mv m4-1.4.19 m4
+        pushd $LFS/sources/m4/
+            eal.notification.buildconf
+            ./configure --prefix=/usr   \
+                        --host=$LFS_TGT \
+                        --build=$(build-aux/config.guess)
+            eal.notification.compiling
+            make
+            eal.notification.installing
+            make DESTDIR=$LFS install
+}       
 
-
-}
 main

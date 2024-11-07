@@ -109,6 +109,9 @@ function eal.install.cross-toolchain() {
             make
             eal.notification.installing
             make install
+            cd ..
+            cat gcc/limitx.h gcc/glimits.h gcc/limity.h > \
+                `dirname $($LFS_TGT-gcc -print-libgcc-file-name)`/include/limits.h
         popd
         EIR_PKG=linux
         eal.notification.extracting
@@ -134,6 +137,7 @@ function eal.install.cross-toolchain() {
         esac
         pushd $LFS/sources/glibc/
             echo -e "I: -- The installer is now patching glibc. --"
+            patch -Np1 -i ../glibc-2.40-fhs-1.patch
             mkdir -v build
             cd       build
             echo "rootsbindir=/usr/sbin" > configparms

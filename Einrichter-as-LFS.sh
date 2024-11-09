@@ -175,8 +175,8 @@ function eal.install.cross-toolchain() {
             esac
         popd
         pushd $LFS/sources/gcc/
-            mkdir -v build
-            cd       build
+            mkdir -v build-libstdcpp
+            cd       build-libstdcpp
             EIR_PKG=libstdcpp
             eal.notification.buildconf
             ../libstdc++-v3/configure           \
@@ -205,6 +205,187 @@ function eal.install.cross-toolchain() {
             make
             eal.notification.installing
             make DESTDIR=$LFS install
+        popd
+        EIR_PKG=ncurses
+        tar -xvf ncurses-6.5.tar.gz
+        mv ncurses-6.5 ncurses
+        pushd $LFS/sources/ncurses
+            sed -i s/mawk// configure
+            mkdir build
+            cd build
+            ../configure
+            make -C include
+            make -C progs tic
+            cd ..
+            eal.notification.buildconf
+            ./configure --prefix=/usr                \
+                        --host=$LFS_TGT              \
+                        --build=$(./config.guess)    \
+                        --mandir=/usr/share/man      \
+                        --with-manpage-format=normal \
+                        --with-shared                \
+                        --without-normal             \
+                        --with-cxx-shared            \
+                        --without-debug              \
+                        --without-ada                \
+                        --disable-stripping
+            eal.notification.compiling
+            make
+            eal.notification.installing
+            make DESTDIR=$LFS TIC_PATH=$(pwd)/build/progs/tic install
+            ln -sv libncursesw.so $LFS/usr/lib/libncurses.so
+            sed -e 's/^#if.*XOPEN.*$/#if 1/' \
+               -i $LFS/usr/include/curses.h
+        popd
+        EIR_PKG=bash
+        tar -xvf bash-5.2.32.tar.gz
+        mv bash-5.2.32 bash
+        pushd $LFS/soruces/bash
+            eal.notification.buildconf
+            ./configure --prefix=/usr                      \
+                        --build=$(sh support/config.guess) \
+                        --host=$LFS_TGT                    \
+                        --without-bash-malloc              \
+                        bash_cv_strtold_broken=no
+            eal.notification.compiling
+            make
+            eal.notification.installing
+            make DESTDIR=$LFS install
+            ln -sv bash $LFS/bin/sh
+        popd
+        EIR_PKG=coreutils
+        eal.notification.extracting
+        tar -xvf coreutils-9.5.tar.xz
+        mv coreutils-9.5 coreutils
+        pushd $LFS/sources/coreutils
+            eal.notification.buildconf
+            ./configure --prefix=/usr                     \
+                        --host=$LFS_TGT                   \
+                        --build=$(build-aux/config.guess) \
+                        --enable-install-program=hostname \
+                        --enable-no-install-program=kill,uptime
+            eal.notification.compiling
+            make
+            eal.notification.installing
+            make DESTDIR=$LFS install
+            mv -v $LFS/usr/bin/chroot              $LFS/usr/sbin
+            mkdir -pv $LFS/usr/share/man/man8
+            mv -v $LFS/usr/share/man/man1/chroot.1 $LFS/usr/share/man/man8/chroot.8
+            sed -i 's/"1"/"8"/'                    $LFS/usr/share/man/man8/chroot.8
+        popd
+        EIR_PKG=diffutils
+        echo "Install notifications will not be shown for small packages, as it will be obvious which action will be executed." && sleep 10
+        tar -xvf diffutils-3.10.tar.xz
+        mv diffutils-3.10 diffutils
+        pushd $LFS/sources/diffutils
+            ./configure --prefix=/usr   \
+                        --host=$LFS_TGT \
+                        --build=$(./build-aux/config.guess)
+            make
+            make DESTDIR=$LFS install
+        popd
+        tar -xvf file-5.45.tar.gz
+        mv file-5.45 file
+        pushd $LFS/sources/file
+        mkdir build
+        pushd build
+            ../configure --disable-bzlib      \
+                        --disable-libseccomp \
+                        --disable-xzlib      \
+                        --disable-zlib
+            make
+        popd
+        ./configure --prefix=/usr --host=$LFS_TGT --build=$(./config.guess)
+        make FILE_COMPILE=$(pwd)/build/src/file
+        make DESTDIR=$LFS install
+        rm -v $LFS/usr/lib/libmagic.la
+        tar -xvf findutils-4.10.0.tar.xz
+        mv findutils-4.10.0.tar.xz findutils
+        pushd $LFS/sources/findutils
+            ./configure --prefix=/usr                   \
+                        --localstatedir=/var/lib/locate \
+                        --host=$LFS_TGT                 \
+                        --build=$(build-aux/config.guess)
+            make
+            make DESTDIR=$LFS install
+        popd
+        tar -xvf gawk-5.3.0.tar.*z
+        mv gawk-5.3.0 gawk
+        pushd $LFS/sources/gawk
+            sed -i 's/extras//' Makefile.in
+            ./configure --prefix=/usr   \
+                        --host=$LFS_TGT \
+                        --build=$(build-aux/config.guess)
+            make
+            make DESTDIR=$LFS install
+        popd
+        tar -xvf grep-3.11.tar.*z
+        mv grep-3.11 grep
+        pushd $LFS/sources/grep
+            ./configure --prefix=/usr   \
+                        --host=$LFS_TGT \
+                        --build=$(./build-aux/config.guess)
+            make
+            make DESTDIR=$LFS install
+        popd
+        tar -xvf gzip-1.13.tar.*z
+        mv gzip-1.13 gzip
+        pushd $LFS/sources/gzip
+            ./configure --prefix=/usr --host=$LFS_TGT
+            make
+            make DESTDIR=$LFS install
+        popd
+        tar -xvf make-4.4.1.tar.*z
+        mv make-4.4.1 make
+        pushd $LFS/sources/make
+            ./configure --prefix=/usr   \
+                        --without-guile \
+                        --host=$LFS_TGT \
+                        --build=$(build-aux/config.guess)
+            make
+            make DESTDIR=$LFS install
+        popd
+        tar -xvf patch-2.7.6.tar.*z
+        mv patch-2.7.6 patch
+        pushd $LFS/sources/patch
+            ./configure --prefix=/usr   \
+                        --host=$LFS_TGT \
+                        --build=$(build-aux/config.guess)
+            make
+            make DESTDIR=$LFS install
+        popd
+
+        tar -xvf sed-4.9.tar.*z
+        mv sed-4.9 sed
+        # From here on I got lazy with the script to get it over with Chapter 6 faster, I'll fix all of this when TylkoLinux is in last Beta stage
+        pushd sed
+            ./configure --prefix=/usr   \
+                        --host=$LFS_TGT \
+                        --build=$(./build-aux/config.guess)
+            make
+            make DESTDIR=$LFS install
+        popd
+        tar -xvf tar-1.35*
+        mv tar-1.35 tar
+        pushd tar
+            ./configure --prefix=/usr                     \
+                        --host=$LFS_TGT                   \
+                        --build=$(build-aux/config.guess) 
+            make
+            make DESTDIR=$LFS install
+        popd
+        tar -xvf xz-5.6.2.tar.*z
+        mv xz-5.6.2 xz
+        pushd $LFS/sources/xz
+            ./configure --prefix=/usr                     \
+                        --host=$LFS_TGT                   \
+                        --build=$(build-aux/config.guess) \
+                        --disable-static                  \
+                        --docdir=/usr/share/doc/xz-5.6.2
+            make
+            make DESTDIR=$LFS install
+            rm -v $LFS/usr/lib/liblzma.la
+        popd
 }       
 
 main

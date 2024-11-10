@@ -8,7 +8,11 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 EINRICHTER_VER=0.1.0
 
 function main() {
-
+    einrichter.colours
+    einrichter.installer.pkgs
+    einrichter.installer.DirLayout
+    einrichter.installer.SafeUser
+    einrichter.installer.SafeUser.end
 }
 
 function einrichter.colours() {
@@ -164,15 +168,25 @@ function einrichter.installer.SafeUser() {
     su - lfs
 }
 
-function einrichter.installer.SafeUser.end() {
-
-}
-
-chown --from lfs -R root:root $LFS/{usr,lib,var,etc,bin,sbin,tools}
+function einrichter.installer.chroot() {
+    chown --from lfs -R root:root $LFS/{usr,lib,var,etc,bin,sbin,tools}
     case $(uname -m) in
-      x86_64) chown --from lfs -R root:root $LFS/lib64 ;;
+        x86_64) chown --from lfs -R root:root $LFS/lib64 ;;
     esac
+    echo -e "${BBlue}[i] ${Blue}Copying third installer to the root of ${LFS}...${Color_Off}"
+    cp $SCRIPT_DIR/Einrichter-in-chroot.sh $LFS/
+    echo -e "${BBlue}[i] ${Blue}Making the installer executable...${Color_Off}"
+    chmod +x $LFS/Einrichter-in-chroot.sh
+    echo -e "${BBlue}[i] ${Blue}Attempting chroot...${Color_Off}"
+    echo -e "${BBlue}[i] ${Blue}You are about to switch to the chroot environment. When you enter the chroot environment, run the Einrichter-in-chroot.sh script located in the root of the filesystem by typing \"/Einrichter-in-chroot.sh\".${Color_Off}"
+    chroot $LFS
 }
+# NEEDS REVIEW!!!
+## chown --from lfs -R root:root $LFS/{usr,lib,var,etc,bin,sbin,tools}
+##     case $(uname -m) in
+##       x86_64) chown --from lfs -R root:root $LFS/lib64 ;;
+##     esac
+## }
 
 function einrichter.installer.bg() {
     

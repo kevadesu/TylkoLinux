@@ -3,7 +3,7 @@
 TylkoLinux, an LFS system
 
 ## Status
-LFS v12.2-systemd book chapter: 5.6.
+LFS v12.2-systemd book chapter: just starting 7.3.
 
 ## To do
 ```md

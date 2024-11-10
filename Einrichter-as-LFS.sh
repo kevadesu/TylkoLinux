@@ -3,6 +3,7 @@
 main() {
     eal.setup.env
     eal.setup.toolchain
+    eal.install.cross-toolchain
 }
 
 function eal.setup.env() {
@@ -48,7 +49,8 @@ function eal.install.cross-toolchain() {
     eal.notification.extracting
     sleep 0.5
     tar -xvf $LFS/sources/binutils-2.43.1.tar.xz
-    cd $LFS/sources/binutils-2.43.1/
+    mv binutils-2.43.1 binutils
+    cd $LFS/sources/binutils/
     mkdir -v build
     cd       build
     eal.notification.buildconf
@@ -386,6 +388,67 @@ function eal.install.cross-toolchain() {
             make DESTDIR=$LFS install
             rm -v $LFS/usr/lib/liblzma.la
         popd
-}       
+        pushd $LFS/sources/binutils
+            sed '6009s/$add_dir//' -i ltmain.sh
+            yes | rm -r build
+            mkdir -v build
+            cd       build
+            ../configure                   \
+                --prefix=/usr              \
+                --build=$(../config.guess) \
+                --host=$LFS_TGT            \
+                --disable-nls              \
+                --enable-shared            \
+                --enable-gprofng=no        \
+                --disable-werror           \
+                --enable-64-bit-bfd        \
+                --enable-new-dtags         \
+                --enable-default-hash-style=gnu
+            make
+            make DESTDIR=$LFS install
+            rm -v $LFS/usr/lib/lib{bfd,ctf,ctf-nobfd,opcodes,sframe}.{a,la}
+        popd
+        EIR_PKG=GCC
+        pushd $LFS/sources/gcc
+            case $(uname -m) in
+                x86_64)
+                    sed -e '/m64=/s/lib64/lib/' \
+                        -i.orig gcc/config/i386/t-linux64
+                ;;
+            esac
+            sed '/thread_header =/s/@.*@/gthr-posix.h/' \
+                -i libgcc/Makefile.in libstdc++-v3/include/Makefile.in
+            yes | rm -r build
+            mkdir -v build            
+            cd       build
+            eal.notification.buildconf
+            ../configure                                       \
+                --build=$(../config.guess)                     \
+                --host=$LFS_TGT                                \
+                --target=$LFS_TGT                              \
+                LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc      \
+                --prefix=/usr                                  \
+                --with-build-sysroot=$LFS                      \
+                --enable-default-pie                           \
+                --enable-default-ssp                           \
+                --disable-nls                                  \
+                --disable-multilib                             \
+                --disable-libatomic                            \
+                --disable-libgomp                              \
+                --disable-libquadmath                          \
+                --disable-libsanitizer                         \
+                --disable-libssp                               \
+                --disable-libvtv                               \
+                --enable-languages=c,c++
+            eal.notification.compiling
+            make
+            eal.notification.installing
+            make DESTDIR=$LFS install
+            ln -sv gcc $LFS/usr/bin/cc
+        popd
+    popd
+    echo "Operations as LFS user are now over. Switching to chroot"
+}           
+
 
 main

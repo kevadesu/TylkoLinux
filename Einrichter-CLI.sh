@@ -9,10 +9,22 @@ EINRICHTER_VER=0.1.0
 
 function main() {
     einrichter.colours
-    einrichter.installer.pkgs
-    einrichter.installer.DirLayout
-    einrichter.installer.SafeUser
-    einrichter.installer.SafeUser.end
+    echo "Einrichter - TylkoLinux Installer Shell $EINRICHTER_VER
+The script is located at $SCRIPT_DIR
+Run einrichter.help for commands"
+    read -p "einrichter>" Command_Input
+    $Command_Input
+    main
+}
+
+einrichter.help() {
+    echo "Einrichter commands:
+einrichter.installer.pkgs - Prepare packages for installation
+einrichter.installer.DirLayout - Set up the directories at the target system
+einrichter.installer.SafeUser - Set up LFS user on host and starting package compilation
+einrichter.installer.chroot - Enter the environment using chroot
+einrichter.help - Show this help dialog
+For more information, see https://github.com/kevadesu/TylkoLinux"
 }
 
 function einrichter.colours() {
@@ -88,7 +100,7 @@ function einrichter.colours() {
     On_IPurple='\033[0;105m'  # Purple
     On_ICyan='\033[0;106m'    # Cyan
     On_IWhite='\033[0;107m'   # White
-
+    echo "[i] The colour variables have been set."
 }
 
 function einrichter.installer.pkgs() {
@@ -117,6 +129,7 @@ function einrichter.installer.pkgs() {
         }
         einrichter.installer.pkgs.verify.patches || einrichter.installer.fail
     popd
+    echo -e "[i] Finished section installer.pkgs"
 }
 
 function einrichter.installer.DirLayout() {
@@ -166,6 +179,12 @@ function einrichter.installer.SafeUser() {
     echo -e "${BBlue}[i] ${Blue}Attempting login as lfs...${Color_Off}"
     echo -e "${BBlue}[i] ${Blue}You are about to switch to the LFS user. When you log in, run the Einrichter-as-LFS.sh script located in your home directory by typing \"./Einrichter-as-LFS.sh\".${Color_Off}"
     su - lfs
+    einrichter.installer.SafeUser.End
+}
+
+function einrichter.installer.SafeUser.End() {
+    echo -e "${BBlue}[i] ${Blue}Completed!${Color_Off}"
+    echo -e "[i] Finished section installer.SafeUser"
 }
 
 function einrichter.installer.chroot() {
@@ -177,16 +196,68 @@ function einrichter.installer.chroot() {
     cp $SCRIPT_DIR/Einrichter-in-chroot.sh $LFS/
     echo -e "${BBlue}[i] ${Blue}Making the installer executable...${Color_Off}"
     chmod +x $LFS/Einrichter-in-chroot.sh
+    echo -e "${BBlue}[i] ${Blue}Preparing the Virtual Kernel File Systems...${Color_Off}"
+    mkdir -pv $LFS/{dev,proc,sys,run}
+    mount -v --bind /dev $LFS/dev
+    mount -vt devpts devpts -o gid=5,mode=0620 $LFS/dev/pts
+    mount -vt proc proc $LFS/proc
+    mount -vt sysfs sysfs $LFS/sys
+    mount -vt tmpfs tmpfs $LFS/run
+    if [ -h $LFS/dev/shm ]; then
+        install -v -d -m 1777 $LFS$(realpath /dev/shm)
+    else
+        mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
+    fi
     echo -e "${BBlue}[i] ${Blue}Attempting chroot...${Color_Off}"
     echo -e "${BBlue}[i] ${Blue}You are about to switch to the chroot environment. When you enter the chroot environment, run the Einrichter-in-chroot.sh script located in the root of the filesystem by typing \"/Einrichter-in-chroot.sh\".${Color_Off}"
-    chroot $LFS
+    chroot "$LFS" /usr/bin/env -i   \
+        HOME=/root                  \
+        TERM="$TERM"                \
+        PS1='(lfs chroot) \u:\w\$ ' \
+        PATH=/usr/bin:/usr/sbin     \
+        MAKEFLAGS="-j$(nproc)"      \
+        TESTSUITEFLAGS="-j$(nproc)" \
+        /bin/bash --login
+
 }
-# NEEDS REVIEW!!!
-## chown --from lfs -R root:root $LFS/{usr,lib,var,etc,bin,sbin,tools}
-##     case $(uname -m) in
-##       x86_64) chown --from lfs -R root:root $LFS/lib64 ;;
-##     esac
-## }
+
+function einrichter.installer.chroot.end() {
+    echo -e "[i] Unmounting virtual file system..."
+    mountpoint -q $LFS/dev/shm && umount $LFS/dev/shm
+    umount $LFS/dev/pts
+    umount $LFS/{sys,proc,run,dev}
+    echo -e "[i] Finished section installer.chroot"
+
+}
+
+function einrichter.backup.create() {
+    echo -e "[?] Variable LFS points to $LFS. This needs to point to the target LFS system.
+If this does NOT point to the LFS directory, EXIT NOW AND SET THE VARIABLE. This will otherwise
+DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED."
+    read -p "[?] Continue? (y/n) " OPT
+    if [ "$OPT" = "y" ]; then echo "Continuing..."; else exit 1; fi
+    echo "[i] Unmounting the virtual file systems..."
+    mountpoint -q $LFS/dev/shm && umount $LFS/dev/shm
+    umount $LFS/dev/pts
+    umount $LFS/{sys,proc,run,dev}
+    echo "[i] Making the backup archive..."
+    cd $LFS
+    tar -cJpf $HOME/lfs-temp-tools-12.2-systemd.tar.xz .
+    echo "[i] OK!"
+
+}
+
+function einrichter.backup.restore() {
+    echo -e "[?] Variable LFS points to $LFS. This needs to point to the target LFS system.
+If this does NOT point to the LFS directory, EXIT NOW AND SET THE VARIABLE. This will otherwise
+DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED."
+    read -p "[?] Continue? (y/n) " OPT
+    echo "[i] Restoring from backup..."
+    cd $LFS
+    rm -rf ./*
+    tar -xpf $HOME/lfs-temp-tools-12.2-systemd.tar.xz
+    echo "[i] OK!"
+}
 
 function einrichter.installer.bg() {
     

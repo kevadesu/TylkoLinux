@@ -1,9 +1,54 @@
 #!/bin/bash
 
 main() {
-    eal.setup.env
-    eal.setup.toolchain
-    eal.install.cross-toolchain
+    echo "Einrichter is designed to work as an install script where you can resume where you left off. Do NOT skip anything if you have not ran the step yet."
+    read -p "Pending step: Setting up environment. Run, skip or quit?" OPT
+    case in "$OPT"
+        R)
+            eal.setup.env
+            ;;
+        S)
+            echo "Step skipped."
+            ;;
+        Q)
+            exit
+            ;;
+        *)
+            echo "Unknown command. Repeating questions."
+            ;;
+    esac
+    read -p "Pending step: Setting up toolchain. Run, skip or quit?" OPT
+    case in "$OPT"
+        R)
+            eal.setup.toolchain
+            ;;
+        S)
+            echo "Step skipped."
+            ;;
+        Q)
+            exit
+            ;;
+        *)
+            echo "Unknown command. Repeating questions."
+            ;;
+    esac
+    read -p "Pending step: Installing cross toolchain and packages. Run, skip or quit?" OPT
+    case in "$OPT"
+        R)
+            eal.install.cross-toolchain
+            ;;
+        S)
+            echo "Step skipped."
+            ;;
+        Q)
+            exit
+            ;;
+        *)
+            echo "Unknown command. Repeating questions."
+            ;;
+    esac
+    echo "Done!"
+    exit
 }
 
 function eal.setup.env() {
@@ -31,11 +76,21 @@ EOF
 source ~/.bash_profile
 }
 
-function eal.notification.buildconf() {echo "I: -- The installer is now configuring the build options --" && sleep 0.2}
-function eal.notification.compiling() {echo "I: -- The installer is now compiling the package $EIR_PKG --" && sleep 0.2}
-function eal.notification.installing() {echo "I: -- The installer is now installing the package $EIR_PKG --" && sleep 0.2}
-function eal.notification.extracting() {echo "I: -- The installer is now extracting the necessary archives for $EIR_PKG --" && sleep 0.2}
-function eal.emergencyAlert() {echo -e "\a" && sleep 0.1 && echo -e "\07" && sleep 0.1 && tput bel}
+function eal.notification.buildconf() {
+    echo "I: -- The installer is now configuring the build options --" && sleep 0.2
+    }
+function eal.notification.compiling() {
+    echo "I: -- The installer is now compiling the package $EIR_PKG --" && sleep 0.2
+}
+function eal.notification.installing() {
+    echo "I: -- The installer is now installing the package $EIR_PKG --" && sleep 0.2
+}
+function eal.notification.extracting() {
+    echo "I: -- The installer is now extracting the necessary archives for $EIR_PKG --" && sleep 0.2
+}
+function eal.emergencyAlert() {
+    echo -e "\a" && sleep 0.1 && echo -e "\07" && sleep 0.1 && tput bel
+}
 
 function eal.setup.toolchain() {
     echo -e "I: The detected system triplet is $(/usr/bin/gcc -dumpmachine)."

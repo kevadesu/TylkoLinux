@@ -158,7 +158,7 @@ function eic.essentials.install() {
         mv Python-3.12.5 python
         pushd python/
         ./configure --prefix=/usr   \
-                --enable-shared     \
+                --enable-shared      \
                 --without-ensurepip
         make
         make install
@@ -422,7 +422,7 @@ EOF
         tar -xvf flex-2.6.4.tar.gz
         mv flex-2.6.4 flex
         pushd flex/
-            ./configure --prefix=/usr \
+            ./configure --prefix=/usr             \
                 --docdir=/usr/share/doc/flex-2.6.4 \
                 --disable-static
             make
@@ -437,12 +437,12 @@ EOF
             SRCDIR=$(pwd)
             cd unix
             ./configure --prefix=/usr           \
-                        --mandir=/usr/share/man \
+                        --mandir=/usr/share/man  \
                         --disable-rpath
             make
 
             sed -e "s|$SRCDIR/unix|/usr/lib|" \
-                -e "s|$SRCDIR|/usr/include|"  \
+                -e "s|$SRCDIR|/usr/include|"   \
                 -i tclConfig.sh
 
             sed -e "s|$SRCDIR/unix/pkgs/tdbc1.1.7|/usr/lib/tdbc1.1.7|" \
@@ -595,6 +595,78 @@ EOF
         popd
         tar -xvf mpfr-4.2.1.tar.xz
         mv mpfr-4.2.1 mpfr
+        pushd mpfr/
+            ./configure --prefix=/usr        \
+                        --disable-static      \
+                        --enable-thread-safe   \
+                        --docdir=/usr/share/doc/mpfr-4.2.1
+            make
+            make html
+            make check
+            make install
+            make install-html
+        popd
+        tar -xvf mpc-1.3.1.tar.gz
+        mv mpc-1.3.1 mpc
+        pushd mpc/
+            ./configure --prefix=/usr    \
+                        --disable-static  \
+                        --docdir=/usr/share/doc/mpc-1.3.1
+            make
+            make html
+            make check
+            make install
+            make install-html
+        popd
+        tar -xvf attr-2.5.2.tar.gz
+        mv attr-2.5.2 attr
+        pushd attr/
+            ./configure --prefix=/usr     \
+                        --disable-static   \
+                        --sysconfdir=/etc   \
+                        --docdir=/usr/share/doc/attr-2.5.2
+            make
+            make check
+            make install
+        popd
+        tar -xvf acl-2.3.2.tar.xz
+        mv acl-2.3.2 acl
+        pushd acl/
+            ./configure --prefix=/usr         \
+                        --disable-static       \
+                        --docdir=/usr/share/doc/acl-2.3.2
+            make
+            make install
+        popd
+        tar -xvf libcap-2.70.tar.xz 
+        mv libcap-2.70 libcap
+        pushd libcap/
+            sed -i '/install -m.*STA/d' libcap/Makefile
+            make prefix=/usr lib=lib
+            make test
+            make prefix=/usr lib=lib install
+        popd
+        tar -xvf libxcrypt-4.4.36.tar.xz
+        mv libxcrypt-4.4.36 libxcrypt
+        pushd libxcrypt/
+            ./configure --prefix=/usr                \
+                        --enable-hashes=strong,glibc  \
+                        --enable-obsolete-api=no       \
+                        --disable-static                \
+                        --disable-failure-tokens
+            make
+            make check
+            make install
+            echo "[i] Reinstalling with ABIv1 features..."
+            make distclean
+            ./configure --prefix=/usr                \
+                        --enable-hashes=strong,glibc  \
+                        --enable-obsolete-api=glibc    \
+                        --disable-static                \
+                        --disable-failure-tokens
+            make
+            cp -av --remove-destination .libs/libcrypt.so.1* /usr/lib
+        popd
         
 }
 

@@ -473,7 +473,7 @@ EOF
         mv expect5.45.4 expect
         pushd expect/
             eic.system.build.expect.intervention() {
-                [[ if $(python3 -c 'from pty import spawn; spawn(["echo", "ok"])') != "ok" ]]; then
+                if [[ $(python3 -c 'from pty import spawn; spawn(["echo", "ok"])') != "ok" ]]; then
                     echo "[i] PS: The error is caused by the chroot environment not being set up for proper PTY operation."
                     read -p "[!] Answer unexpected. Continue, enter shell or quit? [c/s/q] " OPT
                     case "$OPT" in
@@ -521,6 +521,81 @@ EOF
             make install
             install -v -dm755  /usr/share/doc/dejagnu-1.6.3
             install -v -m644   doc/dejagnu.{html,txt} /usr/share/doc/dejagnu-1.6.3
+        popd
+        tar -xvf pkgconf-2.3.0.tar.xz
+        mv pkgconf-2.3.0 pkgconf
+        pushd pkgconf/
+            ./configure --prefix=/usr              \
+                        --disable-static            \
+                        --docdir=/usr/share/doc/pkgconf-2.3.0
+            make
+            make install
+            ln -sv pkgconf   /usr/bin/pkg-config
+            ln -sv pkgconf.1 /usr/share/man/man1/pkg-config.1
+        popd
+        pushd binutils/
+            rm    -r build
+            mkdir -v build
+            cd       build
+            ../configure --prefix=/usr       \
+                         --sysconfdir=/etc    \
+                         --enable-gold         \
+                         --enable-ld=default    \
+                         --enable-plugins        \
+                         --enable-shared          \
+                         --disable-werror          \
+                         --enable-64-bit-bfd        \
+                         --enable-new-dtags          \
+                         --with-system-zlib           \
+                         --enable-default-hash-style=gnu
+            make tooldir=/usr
+            make -k check
+            grep '^FAIL:' $(find -name '*.log')
+            make tooldir=/usr install
+            rm -fv /usr/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a
+        popd
+        tar -xvf gmp-6.3.0.tar.xz
+        mv gmp-6.3.0 gmp
+        pushd gmp/
+            ./configure --prefix=/usr         \
+                        --enable-cxx           \
+                        --disable-static        \
+                        --host=none-linux-gnu    \
+                        --docdir=/usr/share/doc/gmp-6.3.0
+            make
+            make html
+            make check 2>&1 | tee gmp-check-log
+            GMP_CHECK=$(awk '/# PASS:/{total+=$3} ; END{print total}' gmp-check-log)
+            eic.system.build.gmp.intervention() {
+                if [ ! "$GMP_CHECK" -ge "199" ]; then
+                    echo "[i] PS: The check did not reach the minimum amount of passed tests required."
+                    read -p "[!] Answer unexpected. Continue, enter shell or quit? [c/s/q] " OPT
+                    case "$OPT" in
+                        c)
+                            echo "OK!"
+                        ;;
+                        s)
+                            /bin/sh
+                            eic.system.build.gmp.intervention
+                        ;;
+                        q)
+                            exit 1 
+                        ;;
+                        *)
+                            echo "Invalid command!"
+                            eic.system.build.gmp.intervention
+                        ;;
+                    esac
+                fi
+            }
+
+            eic.system.build.gmp.intervention
+            make install
+            make install-html
+        popd
+        tar -xvf mpfr-4.2.1.tar.xz
+        mv mpfr-4.2.1 mpfr
+        
 }
 
 main

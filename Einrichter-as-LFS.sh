@@ -111,12 +111,12 @@ function eal.install.cross-toolchain() {
     eal.notification.buildconf
     sleep 0.5
     ../configure --prefix=$LFS/tools \
-             --with-sysroot=$LFS \
-             --target=$LFS_TGT   \
-             --disable-nls       \
-             --enable-gprofng=no \
-             --disable-werror    \
-             --enable-new-dtags  \
+             --with-sysroot=$LFS      \
+             --target=$LFS_TGT         \
+             --disable-nls              \
+             --enable-gprofng=no         \
+             --disable-werror             \
+             --enable-new-dtags            \
              --enable-default-hash-style=gnu
     eal.notification.compiling
     make
@@ -143,24 +143,24 @@ function eal.install.cross-toolchain() {
             cd       build
             eal.notification.buildconf
             ../configure                  \
-                --target=$LFS_TGT         \
-                --prefix=$LFS/tools       \
-                --with-glibc-version=2.40 \
-                --with-sysroot=$LFS       \
-                --with-newlib             \
-                --without-headers         \
-                --enable-default-pie      \
-                --enable-default-ssp      \
-                --disable-nls             \
-                --disable-shared          \
-                --disable-multilib        \
-                --disable-threads         \
-                --disable-libatomic       \
-                --disable-libgomp         \
-                --disable-libquadmath     \
-                --disable-libssp          \
-                --disable-libvtv          \
-                --disable-libstdcxx       \
+                --target=$LFS_TGT          \
+                --prefix=$LFS/tools         \
+                --with-glibc-version=2.40    \
+                --with-sysroot=$LFS           \
+                --with-newlib                  \
+                --without-headers               \
+                --enable-default-pie             \
+                --enable-default-ssp              \
+                --disable-nls                      \
+                --disable-shared                    \
+                --disable-multilib                   \
+                --disable-threads                     \
+                --disable-libatomic                    \
+                --disable-libgomp                       \
+                --disable-libquadmath                    \
+                --disable-libssp                          \
+                --disable-libvtv                           \
+                --disable-libstdcxx                         \
                 --enable-languages=c,c++
             eal.notification.compiling
             make
@@ -200,12 +200,12 @@ function eal.install.cross-toolchain() {
             echo "rootsbindir=/usr/sbin" > configparms
             eal.notification.buildconf
             ../configure                           \
-                --prefix=/usr                      \
-                --host=$LFS_TGT                    \
-                --build=$(../scripts/config.guess) \
-                --enable-kernel=4.19               \
-                --with-headers=$LFS/usr/include    \
-                --disable-nscd                     \
+                --prefix=/usr                       \
+                --host=$LFS_TGT                      \
+                --build=$(../scripts/config.guess)    \
+                --enable-kernel=4.19                   \
+                --with-headers=$LFS/usr/include         \
+                --disable-nscd                           \
                 libc_cv_slibdir=/usr/lib
             eal.notification.compiling
             make
@@ -237,12 +237,12 @@ function eal.install.cross-toolchain() {
             EIR_PKG=libstdcpp
             eal.notification.buildconf
             ../libstdc++-v3/configure           \
-                --host=$LFS_TGT                 \
-                --build=$(../config.guess)      \
-                --prefix=/usr                   \
-                --disable-multilib              \
-                --disable-nls                   \
-                --disable-libstdcxx-pch         \
+                --host=$LFS_TGT                  \
+                --build=$(../config.guess)        \
+                --prefix=/usr                      \
+                --disable-multilib                  \
+                --disable-nls                        \
+                --disable-libstdcxx-pch               \
                 --with-gxx-include-dir=/tools/$LFS_TGT/include/c++/14.2.0
             eal.notification.compiling
             make
@@ -276,15 +276,15 @@ function eal.install.cross-toolchain() {
             cd ..
             eal.notification.buildconf
             ./configure --prefix=/usr                \
-                        --host=$LFS_TGT              \
-                        --build=$(./config.guess)    \
-                        --mandir=/usr/share/man      \
-                        --with-manpage-format=normal \
-                        --with-shared                \
-                        --without-normal             \
-                        --with-cxx-shared            \
-                        --without-debug              \
-                        --without-ada                \
+                        --host=$LFS_TGT               \
+                        --build=$(./config.guess)      \
+                        --mandir=/usr/share/man         \
+                        --with-manpage-format=normal     \
+                        --with-shared                     \
+                        --without-normal                   \
+                        --with-cxx-shared                   \
+                        --without-debug                      \
+                        --without-ada                         \
                         --disable-stripping
             eal.notification.compiling
             make
@@ -300,9 +300,9 @@ function eal.install.cross-toolchain() {
         pushd $LFS/soruces/bash
             eal.notification.buildconf
             ./configure --prefix=/usr                      \
-                        --build=$(sh support/config.guess) \
-                        --host=$LFS_TGT                    \
-                        --without-bash-malloc              \
+                        --build=$(sh support/config.guess)  \
+                        --host=$LFS_TGT                      \
+                        --without-bash-malloc                 \
                         bash_cv_strtold_broken=no
             eal.notification.compiling
             make
@@ -317,9 +317,9 @@ function eal.install.cross-toolchain() {
         pushd $LFS/sources/coreutils
             eal.notification.buildconf
             ./configure --prefix=/usr                     \
-                        --host=$LFS_TGT                   \
-                        --build=$(build-aux/config.guess) \
-                        --enable-install-program=hostname \
+                        --host=$LFS_TGT                    \
+                        --build=$(build-aux/config.guess)   \
+                        --enable-install-program=hostname    \
                         --enable-no-install-program=kill,uptime
             eal.notification.compiling
             make
@@ -336,7 +336,7 @@ function eal.install.cross-toolchain() {
         mv diffutils-3.10 diffutils
         pushd $LFS/sources/diffutils
             ./configure --prefix=/usr   \
-                        --host=$LFS_TGT \
+                        --host=$LFS_TGT  \
                         --build=$(./build-aux/config.guess)
             make
             make DESTDIR=$LFS install
@@ -347,8 +347,8 @@ function eal.install.cross-toolchain() {
         mkdir build
         pushd build
             ../configure --disable-bzlib      \
-                        --disable-libseccomp \
-                        --disable-xzlib      \
+                        --disable-libseccomp   \
+                        --disable-xzlib         \
                         --disable-zlib
             make
         popd
@@ -360,8 +360,8 @@ function eal.install.cross-toolchain() {
         mv findutils-4.10.0.tar.xz findutils
         pushd $LFS/sources/findutils
             ./configure --prefix=/usr                   \
-                        --localstatedir=/var/lib/locate \
-                        --host=$LFS_TGT                 \
+                        --localstatedir=/var/lib/locate  \
+                        --host=$LFS_TGT                   \
                         --build=$(build-aux/config.guess)
             make
             make DESTDIR=$LFS install
@@ -371,7 +371,7 @@ function eal.install.cross-toolchain() {
         pushd $LFS/sources/gawk
             sed -i 's/extras//' Makefile.in
             ./configure --prefix=/usr   \
-                        --host=$LFS_TGT \
+                        --host=$LFS_TGT  \
                         --build=$(build-aux/config.guess)
             make
             make DESTDIR=$LFS install
@@ -380,7 +380,7 @@ function eal.install.cross-toolchain() {
         mv grep-3.11 grep
         pushd $LFS/sources/grep
             ./configure --prefix=/usr   \
-                        --host=$LFS_TGT \
+                        --host=$LFS_TGT  \
                         --build=$(./build-aux/config.guess)
             make
             make DESTDIR=$LFS install
@@ -396,8 +396,8 @@ function eal.install.cross-toolchain() {
         mv make-4.4.1 make
         pushd $LFS/sources/make
             ./configure --prefix=/usr   \
-                        --without-guile \
-                        --host=$LFS_TGT \
+                        --without-guile  \
+                        --host=$LFS_TGT   \
                         --build=$(build-aux/config.guess)
             make
             make DESTDIR=$LFS install
@@ -406,7 +406,7 @@ function eal.install.cross-toolchain() {
         mv patch-2.7.6 patch
         pushd $LFS/sources/patch
             ./configure --prefix=/usr   \
-                        --host=$LFS_TGT \
+                        --host=$LFS_TGT  \
                         --build=$(build-aux/config.guess)
             make
             make DESTDIR=$LFS install
@@ -417,7 +417,7 @@ function eal.install.cross-toolchain() {
         # From here on I got lazy with the script to get it over with Chapter 6 faster, I'll fix all of this when TylkoLinux is in last Beta stage
         pushd sed
             ./configure --prefix=/usr   \
-                        --host=$LFS_TGT \
+                        --host=$LFS_TGT  \
                         --build=$(./build-aux/config.guess)
             make
             make DESTDIR=$LFS install
@@ -426,7 +426,7 @@ function eal.install.cross-toolchain() {
         mv tar-1.35 tar
         pushd tar
             ./configure --prefix=/usr                     \
-                        --host=$LFS_TGT                   \
+                        --host=$LFS_TGT                    \
                         --build=$(build-aux/config.guess) 
             make
             make DESTDIR=$LFS install
@@ -435,9 +435,9 @@ function eal.install.cross-toolchain() {
         mv xz-5.6.2 xz
         pushd $LFS/sources/xz
             ./configure --prefix=/usr                     \
-                        --host=$LFS_TGT                   \
-                        --build=$(build-aux/config.guess) \
-                        --disable-static                  \
+                        --host=$LFS_TGT                    \
+                        --build=$(build-aux/config.guess)   \
+                        --disable-static                     \
                         --docdir=/usr/share/doc/xz-5.6.2
             make
             make DESTDIR=$LFS install
@@ -449,15 +449,15 @@ function eal.install.cross-toolchain() {
             mkdir -v build
             cd       build
             ../configure                   \
-                --prefix=/usr              \
-                --build=$(../config.guess) \
-                --host=$LFS_TGT            \
-                --disable-nls              \
-                --enable-shared            \
-                --enable-gprofng=no        \
-                --disable-werror           \
-                --enable-64-bit-bfd        \
-                --enable-new-dtags         \
+                --prefix=/usr               \
+                --build=$(../config.guess)   \
+                --host=$LFS_TGT               \
+                --disable-nls                  \
+                --enable-shared                 \
+                --enable-gprofng=no              \
+                --disable-werror                  \
+                --enable-64-bit-bfd                \
+                --enable-new-dtags                  \
                 --enable-default-hash-style=gnu
             make
             make DESTDIR=$LFS install
@@ -478,22 +478,22 @@ function eal.install.cross-toolchain() {
             cd       build
             eal.notification.buildconf
             ../configure                                       \
-                --build=$(../config.guess)                     \
-                --host=$LFS_TGT                                \
-                --target=$LFS_TGT                              \
-                LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc      \
-                --prefix=/usr                                  \
-                --with-build-sysroot=$LFS                      \
-                --enable-default-pie                           \
-                --enable-default-ssp                           \
-                --disable-nls                                  \
-                --disable-multilib                             \
-                --disable-libatomic                            \
-                --disable-libgomp                              \
-                --disable-libquadmath                          \
-                --disable-libsanitizer                         \
-                --disable-libssp                               \
-                --disable-libvtv                               \
+                --build=$(../config.guess)                      \
+                --host=$LFS_TGT                                  \
+                --target=$LFS_TGT                                 \
+                LDFLAGS_FOR_TARGET=-L$PWD/$LFS_TGT/libgcc          \
+                --prefix=/usr                                       \
+                --with-build-sysroot=$LFS                            \
+                --enable-default-pie                                  \
+                --enable-default-ssp                                   \
+                --disable-nls                                           \
+                --disable-multilib                                       \
+                --disable-libatomic                                       \
+                --disable-libgomp                                          \
+                --disable-libquadmath                                       \
+                --disable-libsanitizer                                       \
+                --disable-libssp                                              \
+                --disable-libvtv                                               \
                 --enable-languages=c,c++
             eal.notification.compiling
             make

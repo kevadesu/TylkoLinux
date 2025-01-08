@@ -15,13 +15,13 @@ fi
 
 echo "Switched to Einrichter-in-chroot mode. Type eic.help for list of commands, exit to exit."
 
-main() {
+function main() {
     read -p "einrichter/eic>" OPT
     $OPT
     main
 }
 
-eic.help() {
+function eic.help() {
     echo "
     eic.dirs.create - set up directories
     eic.essentials.create - set up essentials
@@ -195,13 +195,13 @@ function eic.essentials.install() {
     popd
 }
 
-eic.clean() {
+function eic.clean() {
     rm -rf /usr/share/{info,man,doc}/*
     find /usr/{lib,libexec} -name \*.la -delete
     rm -rf /tools
 }
 
-eic.system.build() {
+function eic.system.build() {
     pushd /sources
         tar -xvf man-pages-6.9.1.tar.xz
         mv man-pages-6.9.1.tar.xz man-pages
@@ -706,7 +706,7 @@ EOF
     popd
 }
 
-eic.system.build.continue() {
+function eic.system.build.continue() {
     pushd /sources/
         pushd gcc/
             case $(uname -m) in

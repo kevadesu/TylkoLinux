@@ -28,7 +28,7 @@ function eic.help() {
     eic.essentials.install - install essential tools
     eic.clean - clean up environment
     eic.system.build - build the system
-    eic.system.build.continue - continue building the system, which takes over an hour too btw
+    eic.system.build.continue - continue building the system, which takes about more than 50 SBUs btw.
     eic.help - show this message
     "
 }

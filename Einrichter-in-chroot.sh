@@ -731,3 +731,5 @@ function eic.system.build.continue() {
 }
 
 main
+
+# test

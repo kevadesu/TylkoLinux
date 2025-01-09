@@ -3,13 +3,19 @@
 TylkoLinux, an LFS system
 
 ## Status
-LFS v12.2-systemd book chapter: just starting 7.3.
+LFS v12.2-systemd book chapter: 8.29
 
 ## To do
-```md
-[ ] Make a package manager
-[ ] Finish the project in the first place
-```
+
+- [ ] ~~Make a package manager~~ Nix will be used
+
+- [ ] Try to make system bootable
+
+- [ ] Finish the project in the first place
+
+Maybe maybe maybe:
+
+- [ ] Invent an easier way to distribute the distro
 
 ## Contributing
 I don't know what else to type lol just open a PR when this project is done

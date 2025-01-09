@@ -28,7 +28,7 @@ function eic.help() {
     eic.essentials.install - install essential tools
     eic.clean - clean up environment
     eic.system.build - build the system
-    eic.system.build.continue - continue building the system, which takes about more than 50 SBUs btw.
+    eic.system.build.gcc - build GCC. this has been put in a separate function because building GCC alone takes 46 SBU.
     eic.help - show this message
     "
 }
@@ -706,7 +706,7 @@ EOF
     popd
 }
 
-function eic.system.build.continue() {
+function eic.system.build.gcc() {
     pushd /sources/
         pushd gcc/
             case $(uname -m) in
@@ -728,6 +728,10 @@ function eic.system.build.continue() {
                          --disable-bootstrap             \
                          --disable-fixincludes            \
                          --with-system-zlib
+            make
+        popd
+    popd
+    echo "[i] Finished building GCC"
 }
 
 main

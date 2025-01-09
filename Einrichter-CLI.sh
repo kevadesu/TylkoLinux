@@ -211,12 +211,12 @@ function einrichter.installer.chroot() {
     echo -e "${BBlue}[i] ${Blue}Attempting chroot...${Color_Off}"
     echo -e "${BBlue}[i] ${Blue}You are about to switch to the chroot environment. When you enter the chroot environment, run the Einrichter-in-chroot.sh script located in the root of the filesystem by typing \"/Einrichter-in-chroot.sh\".${Color_Off}"
     chroot "$LFS" /usr/bin/env -i   \
-        HOME=/root                  \
-        TERM="$TERM"                \
-        PS1='(lfs chroot) \u:\w\$ ' \
-        PATH=/usr/bin:/usr/sbin     \
-        MAKEFLAGS="-j$(nproc)"      \
-        TESTSUITEFLAGS="-j$(nproc)" \
+        HOME=/root                   \
+        TERM="$TERM"                  \
+        PS1='(lfs chroot) \u:\w\$ '    \
+        PATH=/usr/bin:/usr/sbin         \
+        MAKEFLAGS="-j$(nproc)"           \
+        TESTSUITEFLAGS="-j$(nproc)"       \
         /bin/bash --login
 
 }

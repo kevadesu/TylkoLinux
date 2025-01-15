@@ -13,6 +13,9 @@ if [ ! -c /dev/null ]; then
     echo "/dev/null has been fixed."
 fi
 
+chmod 755 /bin/bash
+chown root:root /bin/bash
+
 echo "Switched to Einrichter-in-chroot mode. Type eic.help for list of commands, exit to exit."
 
 function main() {
@@ -29,6 +32,7 @@ function eic.help() {
     eic.clean - clean up environment
     eic.system.build - build the system
     eic.system.build.gcc - build GCC. this has been put in a separate function because building GCC alone takes 46 SBU.
+    eic.system.build.continue - continue building the system after successfully building GCC
     eic.help - show this message
     "
 }
@@ -729,6 +733,53 @@ function eic.system.build.gcc() {
                          --disable-fixincludes            \
                          --with-system-zlib
             make
+            ulimit -s -H unlimited
+            sed -e '/cpython/d'               -i ../gcc/testsuite/gcc.dg/plugin/plugin.exp
+            sed -e 's/no-pic /&-no-pie /'     -i ../gcc/testsuite/gcc.target/i386/pr113689-1.c
+            sed -e 's/300000/(1|300000)/'     -i ../libgomp/testsuite/libgomp.c-c++-common/pr109062.c
+            sed -e 's/{ target nonpic } //' \
+                -e '/GOTPCREL/d'              -i ../gcc/testsuite/gcc.target/i386/fentryname3.c
+
+            eic.system.build.gcc.ask() {
+                read -p "Pending step: Running test suite. Run, skip or quit?" OPT
+                case in "$OPT"
+                    R)
+                        chown -R tester .
+                        su tester -c "PATH=$PATH make -k check"
+                        ../contrib/test_summary > /eilogs/8.29-gcc-test.log
+                        ;;
+                    S)
+                        echo "Step skipped."
+                        ;;
+                    Q)
+                        exit
+                        ;;
+                    *)
+                        echo "Unknown command. Repeating questions."
+                        eic.system.build.gcc.ask
+                        ;;
+                esac
+            }
+            eic.system.build.gcc.ask
+            read -p "[i] Press enter to continue." ANY
+            make install
+            chown -v -R root:root \
+                /usr/lib/gcc/$(gcc -dumpmachine)/14.2.0/include{,-fixed}
+            ln -svr /usr/bin/cpp /usr/lib
+            ln -sv gcc.1 /usr/share/man/man1/cc.1
+            ln -sfv ../../libexec/gcc/$(gcc -dumpmachine)/14.2.0/liblto_plugin.so \
+                /usr/lib/bfd-plugins/
+            echo 'int main(){}' > dummy.c
+            cc dummy.c -v -Wl,--verbose &> dummy.log
+            readelf -l a.out | grep ': /lib'
+            grep -E -o '/usr/lib.*/S?crt[1in].*succeeded' dummy.log || read -p "[!] The toolchain did not find the correct start files. Press enter to continue." ANY
+            grep -B4 '^ /usr/include' dummy.log || read -p "[!] The toolchain did not find the correct header files. Press enter to continue." ANY
+            grep 'SEARCH.*/usr/lib' dummy.log |sed 's|; |\n|g' || read -p "[!] The toolchain was unable to verify that the new linker is being used with the correct search paths. Press enter to continue." ANY
+            grep "/lib.*/libc.so.6 " dummy.log || read -p "[!] The toolchain did not find the correct libc. Press enter to continue." ANY
+            grep found dummy.log || read -p "[!] The toolchain did not find the correct dynamic linker. Press enter to continue." ANY
+            rm -v dummy.c a.out dummy.log
+            mkdir -pv /usr/share/gdb/auto-load/usr/lib
+            mv -v /usr/lib/*gdb.py /usr/share/gdb/auto-load/usr/lib
         popd
     popd
     echo "[i] Finished building GCC"
@@ -736,4 +787,149 @@ function eic.system.build.gcc() {
 
 main
 
-# test
+function eic.system.build.continue() {
+    pushd /sources/
+        pushd ncurses/
+            ./configure --prefix=/usr           \
+                        --mandir=/usr/share/man  \
+                        --with-shared             \
+                        --without-debug            \
+                        --without-normal            \
+                        --with-cxx-shared            \
+                        --enable-pc-files             \
+                        --with-pkg-config-libdir=/usr/lib/pkgconfig
+            make
+            make DESTDIR=$PWD/dest install
+            install -vm755 dest/usr/lib/libncursesw.so.6.5 /usr/lib
+            rm -v  dest/usr/lib/libncursesw.so.6.5
+            sed -e 's/^#if.*XOPEN.*$/#if 1/' \
+                -i dest/usr/include/curses.h
+            cp -av dest/* /
+            for lib in ncurses form panel menu ; do
+                ln -sfv lib${lib}w.so /usr/lib/lib${lib}.so
+                ln -sfv ${lib}w.pc    /usr/lib/pkgconfig/${lib}.pc
+            done
+            ln -sfv libncursesw.so /usr/lib/libcurses.so
+            cp -v -R doc -T /usr/share/doc/ncurses-6.5
+        popd
+        pushd sed/
+            ./configure --prefix=/usr
+            make 
+            make html
+            chown -R tester .
+            su tester -c "PATH=$PATH make check"
+            make install
+            install -d -m755           /usr/share/doc/sed-4.9
+            install -m644 doc/sed.html /usr/share/doc/sed-4.9
+        popd
+        tar -xvf psmisc-23.7.tar.xz
+        mv psmisc-23.7 psmisc
+        pushd psmisc/
+            ./configure --prefix=/usr
+            make
+            make check
+            make install
+        popd
+        pushd gettext/
+            ./configure --prefix=/usr    \
+                        --disable-static  \
+                        --docdir=/usr/share/doc/gettext-0.22.5
+            make 
+            eic.system.build.continue.gettext.ask() {
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                case in "$OPT"
+                    R)
+                        make check > /eilogs/8.33-gettext-test.log
+                        ;;
+                    S)
+                        echo "Step skipped."
+                        ;;
+                    Q)
+                        exit
+                        ;;
+                    *)
+                        echo "Unknown command. Repeating questions."
+                        eic.system.build.continue.gettext.ask
+                        ;;
+                esac
+            }
+            eic.system.build.continue.gettext.ask
+            make install
+            chmod -v 0755 /usr/lib/preloadable_libintl.so
+        popd
+        pushd bison/
+            ./configure --prefix=/usr --docdir=/usr/share/doc/bison-3.8.2
+            make
+            eic.system.build.continue.bison.ask() {
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                case in "$OPT"
+                    R)
+                        make check > /eilogs/8.34-bison-test.log
+                        ;;
+                    S)
+                        echo "Step skipped."
+                        ;;
+                    Q)
+                        exit
+                        ;;
+                    *)
+                        echo "Unknown command. Repeating questions."
+                        eic.system.build.continue.bison.ask
+                        ;;
+                esac
+            }
+            eic.system.build.continue.bison.ask
+            make install
+        popd
+        pushd grep/
+            sed -i "s/echo/#echo/" src/egrep.sh
+            ./configure --prefix=/usr
+            make
+            make check
+            make install
+        popd
+        pushd bash/
+            ./configure --prefix=/usr             \
+                        --without-bash-malloc      \
+                        --with-installed-readline   \
+                        bash_cv_strtold_broken=no    \
+                        --docdir=/usr/share/doc/bash-5.2.32
+            make
+            eic.system.build.continue.bash.ask() {
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                case in "$OPT"
+                    R)
+                        chown -R tester .
+                        su -s /usr/bin/expect tester << "EOF"
+set timeout -1
+spawn make tests
+expect eof
+lassign [wait] _ _ _ value
+exit $value
+EOF
+                        ;;
+                    S)
+                        echo "Step skipped."
+                        ;;
+                    Q)
+                        exit
+                        ;;
+                    *)
+                        echo "Unknown command. Repeating questions."
+                        eic.system.build.continue.bash.ask
+                        ;;
+                esac
+            }
+            eic.system.build.continue.bash.ask
+            make install
+        popd
+        tar -xvf libtool-2.4.7.tar.xz
+        mv libtool-2.4.7 libtool
+        pushd libtool/
+            ./configure --prefix=/usr
+            make
+            make -k check > /eilogs/8.37-libtool-test.log
+            make install
+            rm -fv /usr/lib/libltdl.a
+        popd
+}

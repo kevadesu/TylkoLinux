@@ -932,4 +932,52 @@ EOF
             make install
             rm -fv /usr/lib/libltdl.a
         popd
+        tar -xvf gdbm-1.24.tar.gz; 
+        mv gdbm-1.24 gdbm
+        pushd gdbm/
+            ./configure --prefix=/usr    \
+                        --disable-static  \
+                        --enable-libgdbm-compat
+            make
+            make check
+            make install
+        popd
+        tar -xvf gperf-3.1.tar.gz; 
+        mv gperf-3.1 gperf
+        pushd gperf/
+            ./configure --prefix=/usr --docdir=/usr/share/doc/gperf-3.1
+            make
+            make -j1 check
+            make install
+        popd
+        tar -xvf expat-2.6.2.tar.xz; 
+        mv expat-2.6.2 expat
+        pushd expat/
+            ./configure --prefix=/usr    \
+                        --disable-static  \
+                        --docdir=/usr/share/doc/expat-2.6.2
+            make
+            make check
+            make install
+            install -v -m644 doc/*.{html,css} /usr/share/doc/expat-2.6.2
+        popd
+        inetutils-2.5.tar.xz; 
+        mv inetutils-2.5 inetutils
+        pushd inetutils/
+            sed -i 's/def HAVE_TERMCAP_TGETENT/ 1/' telnet/telnet.c
+            ./configure --prefix=/usr        \
+                        --bindir=/usr/bin     \
+                        --localstatedir=/var   \
+                        --disable-logger        \
+                        --disable-whois          \
+                        --disable-rcp             \
+                        --disable-rexec            \
+                        --disable-rlogin            \
+                        --disable-rsh                \
+                        --disable-servers
+            make
+            make check
+            make install
+            mv -v /usr/{,s}bin/ifconfig
+        popd
 }

@@ -980,4 +980,123 @@ EOF
             make install
             mv -v /usr/{,s}bin/ifconfig
         popd
+        tar -xvf less-661.tar.gz; 
+        mv less-661 less
+        pushd less/
+            ./configure --prefix=/usr --sysconfdir=/etc
+            make
+            make check
+            make install
+        popd
+        pushd perl/
+            export BUILD_ZLIB=False
+            export BUILD_BZIP2=0
+            sh Configure -des                                          \
+                         -D prefix=/usr                                 \
+                         -D vendorprefix=/usr                            \  
+                         -D privlib=/usr/lib/perl5/5.40/core_perl         \
+                         -D archlib=/usr/lib/perl5/5.40/core_perl          \
+                         -D sitelib=/usr/lib/perl5/5.40/site_perl           \
+                         -D sitearch=/usr/lib/perl5/5.40/site_perl           \
+                         -D vendorlib=/usr/lib/perl5/5.40/vendor_perl         \
+                         -D vendorarch=/usr/lib/perl5/5.40/vendor_perl         \
+                         -D man1dir=/usr/share/man/man1                         \
+                         -D man3dir=/usr/share/man/man3                          \
+                         -D pager="/usr/bin/less -isR"                            \
+                         -D useshrplib                                             \
+                         -D usethreads
+            make
+            make install
+            eic.system.build.continue.perl.ask() {
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                case in "$OPT"
+                    R)
+                        TEST_JOBS=$(nproc) make test_harness > /eilogs/8.43-perl-test.log
+                        ;;
+                    S)
+                        echo "Step skipped."
+                        ;;
+                    Q)
+                        exit
+                        ;;
+                    *)
+                        echo "Unknown command. Repeating questions."
+                        eic.system.build.continue.perl.ask
+                        ;;
+                esac
+            }
+            eic.system.build.continue.perl.ask
+            make install
+            unset BUILD_ZLIB BUILD_BZIP2
+        popd
+        tar -xvf XML-Parser-2.47.tar.gz; 
+        mv XML-Parser-2.47 XML-Parser
+        pushd XML-Parser/
+            perl Makefile.PL
+            make
+            make test
+            make install
+        popd
+        tar -xvf intltool-0.51.0.tar.gz; 
+        mv intltool-0.51.0 intltool
+        pushd intltool/
+            sed -i 's:\\\${:\\\$\\{:' intltool-update.in
+            ./configure --prefix=/usr
+            make
+            make check
+            make install
+            install -v -Dm644 doc/I18N-HOWTO /usr/share/doc/intltool-0.51.0/I18N-HOWTO
+        popd
+        tar -xvf autoconf-2.72.tar.xz; 
+        tar -xvf automake-1.17.tar.xz; 
+        mv autoconf-2.72 autoconf; 
+        mv automake-1.17 automake
+        pushd autoconf/
+            ./configure --prefix=/usr
+            make
+            eic.system.build.continue.autoconf.ask() {
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                case in "$OPT"
+                    R)
+                        make check > /eilogs/8.46-autoconf-test.log
+                        ;;
+                    S)
+                        echo "Step skipped."
+                        ;;
+                    Q)
+                        exit
+                        ;;
+                    *)
+                        echo "Unknown command. Repeating questions."
+                        eic.system.build.continue.autoconf.ask
+                        ;;
+                esac
+            }
+            eic.system.build.continue.autoconf.ask
+            make install
+        popd
+        pushd automake/
+            ./configure --prefix=/usr --docdir=/usr/share/doc/automake-1.17
+            make
+            eic.system.build.continue.autoconf.ask() {
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                case in "$OPT"
+                    R)
+                        make -j$(($(nproc)>4?$(nproc):4)) check > /eilogs/8.47-automake-test.log
+                        ;;
+                    S)
+                        echo "Step skipped."
+                        ;;
+                    Q)
+                        exit
+                        ;;
+                    *)
+                        echo "Unknown command. Repeating questions."
+                        eic.system.build.continue.autoconf.ask
+                        ;;
+                esac
+            }
+            eic.system.build.continue.autoconf.ask
+            make install
+        popd
 }

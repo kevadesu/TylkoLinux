@@ -1078,7 +1078,7 @@ EOF
         pushd automake/
             ./configure --prefix=/usr --docdir=/usr/share/doc/automake-1.17
             make
-            eic.system.build.continue.autoconf.ask() {
+            eic.system.build.continue.automake.ask() {
                 read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
                 case in "$OPT"
                     R)
@@ -1092,11 +1092,56 @@ EOF
                         ;;
                     *)
                         echo "Unknown command. Repeating questions."
-                        eic.system.build.continue.autoconf.ask
+                        eic.system.build.continue.automake.ask
                         ;;
                 esac
             }
-            eic.system.build.continue.autoconf.ask
+            eic.system.build.continue.automake.ask
             make install
+        popd
+        tar -xvf openssl-3.3.1.tar.gz; 
+        mv openssl-3.3.1 openssl
+        pushd openssl/
+            ./config --prefix=/usr         \
+                    --openssldir=/etc/ssl   \
+                    --libdir=lib             \
+                    shared                    \
+                    zlib-dynamic
+            make
+            HARNESS_JOBS=$(nproc) make test > /eilogs/8.48-openssl-test.log
+            sed -i '/INSTALL_LIBS/s/libcrypto.a libssl.a//' Makefile
+            make MANSUFFIX=ssl install
+            mv -v /usr/share/doc/openssl /usr/share/doc/openssl-3.3.1
+            cp -vfr doc/* /usr/share/doc/openssl-3.3.1
+        popd
+        tar -xvf kmod-33.tar.xz; 
+        mv kmod-33 kmod
+        pushd kmod
+            ./configure --prefix=/usr     \
+                        --sysconfdir=/etc  \
+                        --with-openssl      \
+                        --with-xz            \
+                        --with-zstd           \
+                        --with-zlib            \
+                        --disable-manpages
+            make
+            make install
+
+            for target in depmod insmod modinfo modprobe rmmod; do
+                ln -sfv ../bin/kmod /usr/sbin/$target
+                rm -fv /usr/bin/$target
+            done
+        popd
+        tar -xvf elfutils-0.191.tar.bz2; 
+        mv elfutils-0.191 elfutils
+        pushd elfutils/
+            ./configure --prefix=/usr                \
+                        --disable-debuginfod          \
+                        --enable-libdebuginfod=dummy
+            make
+            make check
+            make -C libelf install
+            nstall -vm644 config/libelf.pc /usr/lib/pkgconfig
+            m /usr/lib/libelf.a
         popd
 }

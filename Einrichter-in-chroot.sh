@@ -1141,7 +1141,19 @@ EOF
             make
             make check
             make -C libelf install
-            nstall -vm644 config/libelf.pc /usr/lib/pkgconfig
-            m /usr/lib/libelf.a
+            install -vm644 config/libelf.pc /usr/lib/pkgconfig
+            rm /usr/lib/libelf.a
         popd
+        tar -xvf libffi-3.4.6.tar.gz; 
+        mv libffi-3.4.6 libffi
+        pushd libffi/
+        	./configure --prefix=/usr          \
+        	            --disable-static        \
+        	            --with-gcc-arch=native
+        	make
+        	make check
+        	make install
+        popd
+        
+        
 }

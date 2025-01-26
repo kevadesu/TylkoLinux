@@ -742,7 +742,7 @@ function eic.system.build.gcc() {
 
             eic.system.build.gcc.ask() {
                 read -p "Pending step: Running test suite. Run, skip or quit?" OPT
-                case in "$OPT"
+                case "$OPT" in
                     R)
                         chown -R tester .
                         su tester -c "PATH=$PATH make -k check"
@@ -837,7 +837,7 @@ function eic.system.build.continue() {
             make 
             eic.system.build.continue.gettext.ask() {
                 read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
-                case in "$OPT"
+                case "$OPT" in
                     R)
                         make check > /eilogs/8.33-gettext-test.log
                         ;;
@@ -862,7 +862,7 @@ function eic.system.build.continue() {
             make
             eic.system.build.continue.bison.ask() {
                 read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
-                case in "$OPT"
+                case "$OPT" in
                     R)
                         make check > /eilogs/8.34-bison-test.log
                         ;;
@@ -897,7 +897,7 @@ function eic.system.build.continue() {
             make
             eic.system.build.continue.bash.ask() {
                 read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
-                case in "$OPT"
+                case "$OPT" in
                     R)
                         chown -R tester .
                         su -s /usr/bin/expect tester << "EOF"
@@ -993,7 +993,7 @@ EOF
             export BUILD_BZIP2=0
             sh Configure -des                                          \
                          -D prefix=/usr                                 \
-                         -D vendorprefix=/usr                            \  
+                         -D vendorprefix=/usr                            \
                          -D privlib=/usr/lib/perl5/5.40/core_perl         \
                          -D archlib=/usr/lib/perl5/5.40/core_perl          \
                          -D sitelib=/usr/lib/perl5/5.40/site_perl           \
@@ -1009,7 +1009,7 @@ EOF
             make install
             eic.system.build.continue.perl.ask() {
                 read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
-                case in "$OPT"
+                case "$OPT" in
                     R)
                         TEST_JOBS=$(nproc) make test_harness > /eilogs/8.43-perl-test.log
                         ;;
@@ -1056,7 +1056,7 @@ EOF
             make
             eic.system.build.continue.autoconf.ask() {
                 read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
-                case in "$OPT"
+                case "$OPT" in
                     R)
                         make check > /eilogs/8.46-autoconf-test.log
                         ;;
@@ -1080,7 +1080,7 @@ EOF
             make
             eic.system.build.continue.automake.ask() {
                 read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
-                case in "$OPT"
+                case "$OPT" in
                     R)
                         make -j$(($(nproc)>4?$(nproc):4)) check > /eilogs/8.47-automake-test.log
                         ;;
@@ -1162,7 +1162,7 @@ EOF
             make
             eic.system.build.continue.python.ask() {
                 read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
-                case in "$OPT"
+                case "$OPT" in
                     R)
                         make test TESTOPTS="--timeout 120" > /eilogs/8.52-python-test.log
                         ;;
@@ -1257,7 +1257,7 @@ if ( j > 0 ) return j;\
 			make
 			make install
 		popd
-		pushd gawk
+		pushd gawk/
 			sed -i 's/extras//' Makefile.in
 			./configure --prefix=/usr
 			rm -f /usr/bin/gawk-5.3.0
@@ -1266,4 +1266,250 @@ if ( j > 0 ) return j;\
 			mkdir -pv                                   /usr/share/doc/gawk-5.3.0
 			cp    -v doc/{awkforai.txt,*.{eps,pdf,jpg}} /usr/share/doc/gawk-5.3.0
 		popd
+        pushd findutils/
+            ./configure --prefix=/usr --localstatedir=/var/lib/locate
+            make
+            make install
+        popd
+        tar -xvf groff-1.23.0.tar.gz; 
+        mv groff-1.23.0 groff
+        pushd groff/
+            PAGE=A4 ./configure --prefix=/usr # European standard
+            make
+            make install
+        popd
+        tar -xvf grub-2.12.tar.xz; 
+        mv grub-2.12 grub
+        pushd grub/
+            unset {C,CPP,CXX,LD}FLAGS
+            echo depends bli part_gpt > grub-core/extra_deps.lst
+            ./configure --prefix=/usr          \
+                        --sysconfdir=/etc       \
+                        --disable-efiemu         \
+                        --disable-werror
+            make
+            make install
+            mv -v /etc/bash_completion.d/grub /usr/share/bash-completion/completions
+        popd
+        pushd gzip/
+            ./configure --prefix=/usr
+            make
+            make install
+        popd
+        tar -xvf iproute2-6.10.0.tar.xz; 
+        mv iproute2-6.10.0 iproute2
+        pushd iproute/
+            sed -i /ARPD/d Makefile
+            rm -fv man/man8/arpd.8
+            make NETNS_RUN_DIR=/run/netns
+            make SBINDIR=/usr/sbin install
+            mkdir -pv             /usr/share/doc/iproute2-6.10.0
+            cp -v COPYING README* /usr/share/doc/iproute2-6.10.0
+        popd
+        tar -xvf kbd-2.6.4.tar.xz; 
+        mv kbd-2.6.4 kbd
+        pushd kbd/
+            patch -Np1 -i ../kbd-2.6.4-backspace-1.patch
+            sed -i '/RESIZECONS_PROGS=/s/yes/no/' configure
+            sed -i 's/resizecons.8 //' docs/man/man8/Makefile.in
+            ./configure --prefix=/usr --disable-vlock
+            make
+            make check
+            make install
+            cp -R -v docs/doc -T /usr/share/doc/kbd-2.6.4
+        popd
+        tar -xvf libpipeline-1.5.7.tar.gz; 
+        mv libpipeline-1.5.7 libpipeline
+        pushd libpipeline/
+            ./configure --prefix=/usr
+            make
+            make check
+            make install
+        popd
+        pushd make/
+            ./configure --prefix=/usr
+            make
+            eic.system.build.continue.make.ask() {
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                case "$OPT" in
+                    R)
+                        chown -R tester .
+                        su tester -c "PATH=$PATH make check" > /eilogs/8.69-make-test.log
+                        ;;
+                    S)
+                        echo "Step skipped."
+                        ;;
+                    Q)
+                        exit
+                        ;;
+                    *)
+                        echo "Unknown command. Repeating questions."
+                        eic.system.build.continue.make.ask
+                        ;;
+                esac
+            }
+            eic.system.build.continue.make.ask
+            make install
+        popd
+        pushd patch/
+            ./configure --prefix=/usr
+            make
+            make check
+            make install
+        popd
+        pushd tar/
+            FORCE_UNSAFE_CONFIGURE=1  \
+            ./configure --prefix=/usr
+            make
+            make install
+            make -C doc install-html docdir=/usr/share/doc/tar-1.35
+        popd
+        pushd texinfo/
+            ./configure --prefix=/usr
+            make
+            make check
+            make install
+            make TEXMF=/usr/share/texmf install-tex
+        popd
+        tar -xvf nano-8.1.tar.xz; 
+        mv nano-8.1 nano
+        pushd nano/
+            ./configure --prefix=/usr     \
+                        --sysconfdir=/etc  \
+                        --enable-utf8       \
+                        --docdir=/usr/share/doc/nano-8.1
+            make
+            make install
+            install -v -m644 doc/{nano.html,sample.nanorc} /usr/share/doc/nano-8.1
+        popd
+        tar -xvf MarkupSafe-2.1.5.tar.gz; 
+        mv MarkupSafe-2.1.5 MarkupSafe
+        pushd MarkupSafe/
+            pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+            pip3 install --no-index --no-user --find-links dist Markupsafe
+        popd
+        tar -xvf jinja2-3.1.4.tar.gz; 
+        mv jinja2-3.1.4 jinja
+        pushd jinja/
+            pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+            pip3 install --no-index --no-user --find-links dist Jinja2
+        popd
+        tar -xvf systemd-256.4.tar.gz; 
+        mv systemd-256.4 systemd
+        pushd systemd/
+            sed -i -e 's/GROUP="render"/GROUP="video"/' \
+                   -e 's/GROUP="sgx", //' rules.d/50-udev-default.rules.in
+            mkdir -p build
+            cd       build
+
+            meson setup ..                \
+                  --prefix=/usr            \
+                  --buildtype=release       \
+                  -D default-dnssec=no       \
+                  -D firstboot=false          \
+                  -D install-tests=false       \
+                  -D ldconfig=false             \
+                  -D sysusers=false              \
+                  -D rpmmacrosdir=no              \
+                  -D homed=disabled                \
+                  -D userdb=false                   \
+                  -D man=disabled                    \
+                  -D mode=release                     \
+                  -D pamconfdir=no                     \
+                  -D dev-kvm-mode=0660                  \
+                  -D nobody-group=nogroup                \
+                  -D sysupdate=disabled                   \
+                  -D ukify=disabled                        \
+                  -D docdir=/usr/share/doc/systemd-256.4
+            ninja
+            echo 'NAME="TylkoLinux"' > /etc/os-release
+            ninja test
+            ninja install
+            tar -xf ../../systemd-man-pages-256.4.tar.xz \
+                --no-same-owner --strip-components=1      \
+                -C /usr/share/man
+            systemd-machine-id-setup
+            systemctl preset-all
+        popd
+        tar -xvf dbus-1.14.10.tar.xz; 
+        mv dbus-1.14.10 dbus
+        pushd dbus/
+            ./configure --prefix=/usr                        \
+                        --sysconfdir=/etc                     \
+                        --localstatedir=/var                   \
+                        --runstatedir=/run                      \
+                        --enable-user-session                    \
+                        --disable-static                          \
+                        --disable-doxygen-docs                     \
+                        --disable-xml-docs                          \
+                        --docdir=/usr/share/doc/dbus-1.14.10         \
+                        --with-system-socket=/run/dbus/system_bus_socket
+            make
+            make check
+            make install
+            ln -sfv /etc/machine-id /var/lib/dbus
+        popd
+        tar -xvf man-db-2.12.1.tar.xz; 
+        mv man-db-2.12.1 man-db
+        pushd man-db/
+            ./configure --prefix=/usr                         \
+                        --docdir=/usr/share/doc/man-db-2.12.1  \
+                        --sysconfdir=/etc                       \
+                        --disable-setuid                         \
+                        --enable-cache-owner=bin                  \
+                        --with-browser=/usr/bin/lynx               \
+                        --with-vgrind=/usr/bin/vgrind               \
+                        --with-grap=/usr/bin/grap
+            make
+            make check
+            make install
+        popd
+        tar -xvf procps-ng-4.0.4.tar.xz; 
+        mv procps-ng-4.0.4 procps-ng
+        pushd procps-ng/
+            ./configure --prefix=/usr                           \
+                        --docdir=/usr/share/doc/procps-ng-4.0.4  \
+                        --disable-static                          \
+                        --disable-kill                             \
+                        --with-systemd
+            make src_w_LDADD='$(LDADD) -lsystemd'
+            chown -R tester .
+            su tester -c "PATH=$PATH make check"
+            make install
+        popd
+        pushd util-linux/
+            ./configure --bindir=/usr/bin       \
+                        --libdir=/usr/lib        \
+                        --runstatedir=/run        \
+                        --sbindir=/usr/sbin        \
+                        --disable-chfn-chsh         \
+                        --disable-login              \
+                        --disable-nologin             \
+                        --disable-su                   \
+                        --disable-setpriv               \
+                        --disable-runuser                \
+                        --disable-pylibmount              \
+                        --disable-liblastlog2              \
+                        --disable-static                    \
+                        --without-python                     \
+                        ADJTIME_PATH=/var/lib/hwclock/adjtime \
+                        --docdir=/usr/share/doc/util-linux-2.40.2
+            make
+            make install
+        popd
+        tar -xvf e2fsprogs-1.47.1.tar.gz; 
+        mv e2fsprogs-1.47.1 e2fsprogs
+        pushd e2fsprogs/
+            mkdir -v build
+            cd       build
+            ../configure --prefix=/usr           \
+                         --sysconfdir=/etc        \
+                         --enable-elf-shlibs       \
+                         --disable-libblkid         \
+                         --disable-libuuid           \
+                         --disable-uuidd              \
+                         --disable-fsck
+            make
+            make check
+            make install
 }

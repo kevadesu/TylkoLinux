@@ -3,7 +3,7 @@
 main() {
     echo "Einrichter is designed to work as an install script where you can resume where you left off. Do NOT skip anything if you have not ran the step yet."
     read -p "Pending step: Setting up environment. Run, skip or quit?" OPT
-    case in "$OPT"
+    case "$OPT" in
         R)
             eal.setup.env
             ;;
@@ -18,7 +18,7 @@ main() {
             ;;
     esac
     read -p "Pending step: Setting up toolchain. Run, skip or quit?" OPT
-    case in "$OPT"
+    case "$OPT" in
         R)
             eal.setup.toolchain
             ;;
@@ -33,7 +33,7 @@ main() {
             ;;
     esac
     read -p "Pending step: Installing cross toolchain and packages. Run, skip or quit?" OPT
-    case in "$OPT"
+    case "$OPT" in
         R)
             eal.install.cross-toolchain
             ;;
@@ -73,7 +73,7 @@ MAKEFLAGS=-j$(nproc)
 export LFS LC_ALL LFS_TGT PATH CONFIG_SITE MAKEFLAGS 
 EOF
 
-source ~/.bash_profile
+source $HOME/.bash_profile
 }
 
 function eal.notification.buildconf() {

@@ -1154,6 +1154,116 @@ EOF
         	make check
         	make install
         popd
-        
-        
+        pushd python/
+            ./configure --prefix=/usr        \
+                        --enable-shared       \
+                        --with-system-expat    \
+                        --enable-optimizations
+            make
+            eic.system.build.continue.python.ask() {
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                case in "$OPT"
+                    R)
+                        make test TESTOPTS="--timeout 120" > /eilogs/8.52-python-test.log
+                        ;;
+                    S)
+                        echo "Step skipped."
+                        ;;
+                    Q)
+                        exit
+                        ;;
+                    *)
+                        echo "Unknown command. Repeating questions."
+                        eic.system.build.continue.python.ask
+                        ;;
+                esac
+            }
+            eic.system.build.continue.python.ask
+            make install
+            cat > /etc/pip.conf << EOF
+[global]
+root-user-action = ignore
+disable-pip-version-check = true
+EOF
+            install -v -dm755 /usr/share/doc/python-3.12.5/html
+
+            tar --no-same-owner \
+                -xvf ../python-3.12.5-docs-html.tar.bz2
+            cp -R --no-preserve=mode python-3.12.5-docs-html/* \
+                /usr/share/doc/python-3.12.5/html
+        popd
+        tar -xvf flit_core-3.9.0.tar.gz; 
+        mv flit_core-3.9.0 flit_core
+        pushd flit_core/
+        	pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+        	pip3 install --no-index --no-user --find-links dist flit_core
+        popd
+        tar -xvf wheel-0.44.0.tar.gz; 
+        mv wheel-0.44.0 wheel
+        pushd wheel/
+        	pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+        	pip3 install --no-index --find-links=dist wheel
+        popd
+        tar -xvf setuptools-72.2.0.tar.gz; 
+        mv setuptools-72.2.0 setuptools
+        pushd setuptools/
+        	pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+        	pip3 install --no-index --find-links dist setuptools
+        popd
+        tar -xvf ninja-1.12.1.tar.gz; 
+        mv ninja-1.12.1 ninja
+        pushd ninja/
+        	export NINJAJOBS=4
+        	sed -i '/int Guess/a \
+int   j = 0;\
+char* jobs = getenv( "NINJAJOBS" );\
+if ( jobs != NULL ) j = atoi( jobs );\
+if ( j > 0 ) return j;\
+' src/ninja.cc
+			python3 configure.py --bootstrap
+			install -vm755 ninja /usr/bin/
+			install -vDm644 misc/bash-completion /usr/share/bash-completion/completions/ninja
+			install -vDm644 misc/zsh-completion  /usr/share/zsh/site-functions/_ninja
+		popd
+		tar -xvf meson-1.5.1.tar.gz; 
+		mv meson-1.5.1 meson
+		pushd meson/
+			pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
+			pip3 install --no-index --find-links dist meson
+			install -vDm644 data/shell-completions/bash/meson /usr/share/bash-completion/completions/meson
+			install -vDm644 data/shell-completions/zsh/_meson /usr/share/zsh/site-functions/_meson
+		popd
+		pushd coreutils/
+			patch -Np1 -i ../coreutils-9.5-i18n-2.patch
+			autoreconf -fiv
+			FORCE_UNSAFE_CONFIGURE=1 ./configure \
+			            --prefix=/usr             \
+			            --enable-no-install-program=kill,uptime
+			make
+			make install
+			mv -v /usr/bin/chroot /usr/sbin
+			mv -v /usr/share/man/man1/chroot.1 /usr/share/man/man8/chroot.8
+			sed -i 's/"1"/"8"/' /usr/share/man/man8/chroot.8
+		popd
+		tar -xvf check-0.15.2.tar.gz; 
+		mv check-0.15.2 check
+		pushd check/
+			./configure --prefix=/usr --disable-static
+			make
+			make docdir=/usr/share/doc/check-0.15.2 install
+		popd
+		pushd diffutils/
+			./configure --prefix=/usr
+			make
+			make install
+		popd
+		pushd gawk
+			sed -i 's/extras//' Makefile.in
+			./configure --prefix=/usr
+			rm -f /usr/bin/gawk-5.3.0
+			make install
+			ln -sv gawk.1 /usr/share/man/man1/awk.1
+			mkdir -pv                                   /usr/share/doc/gawk-5.3.0
+			cp    -v doc/{awkforai.txt,*.{eps,pdf,jpg}} /usr/share/doc/gawk-5.3.0
+		popd
 }

@@ -1590,3 +1590,19 @@ function eic.system.build.clean() {
 	find /usr -depth -name $(uname -m)-lfs-linux-gnu\* | xargs rm -rf
 	userdel -r tester
 }
+
+function eic.config.network() {
+    ip link
+    ln -s /dev/null /etc/systemd/network/99-default.link
+    read -p "Enter MAC address of desired device: " OPT_MAC
+    
+    cat > /etc/systemd/network/10-ether0.link << "EOF"
+[Match]
+# Change the MAC address as appropriate for your network device
+MACAddress=${OPT_MAC}
+
+[Link]
+Name=ether0
+EOF
+    d
+}

@@ -502,7 +502,7 @@ function eal.install.cross-toolchain() {
             ln -sv gcc $LFS/usr/bin/cc
         popd
     popd
-    echo "Operations as LFS user are now over. Switching to chroot"
+    echo "Cross-Toolchain installation has completed."
 }           
 
 

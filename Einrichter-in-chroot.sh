@@ -19,7 +19,7 @@ chown root:root /bin/bash
 echo "Switched to Einrichter-in-chroot mode. Type eic.help for list of commands, exit to exit."
 
 function main() {
-    read -p "einrichter/eic>" OPT
+    read -p "einrichter/eic> " OPT
     $OPT
     main
 }
@@ -33,6 +33,8 @@ function eic.help() {
     eic.system.build - build the system
     eic.system.build.gcc - build GCC. this has been put in a separate function because building GCC alone takes 46 SBU.
     eic.system.build.continue - continue building the system after successfully building GCC
+    eic.strip - removes unnecessary debug symbols
+    eic.system.build.clean - clean up files after the build process
     eic.help - show this message
     "
 }
@@ -1512,4 +1514,79 @@ if ( j > 0 ) return j;\
             make
             make check
             make install
+            rm -fv /usr/lib/{libcom_err,libe2p,libext2fs,libss}.a
+            gunzip -v /usr/share/info/libext2fs.info.gz
+            install-info --dir-file=/usr/share/info/dir /usr/share/info/libext2fs.info
+            makeinfo -o      doc/com_err.info ../lib/et/com_err.texinfo
+            install -v -m644 doc/com_err.info /usr/share/info
+            install-info --dir-file=/usr/share/info/dir /usr/share/info/com_err.info
+        popd
+    popd
+    echo "[i] The system build has successfully finished."
+}
+
+function eic.strip() {
+	save_usrlib="$(cd /usr/lib; ls ld-linux*[^g])
+	             libc.so.6
+	             libthread_db.so.1
+	             libquadmath.so.0.0.0
+	             libstdc++.so.6.0.33
+	             libitm.so.1.0.0
+	             libatomic.so.1.2.0"
+	
+	cd /usr/lib
+	
+	for LIB in $save_usrlib; do
+	    objcopy --only-keep-debug --compress-debug-sections=zlib $LIB $LIB.dbg
+	    cp $LIB /tmp/$LIB
+	    strip --strip-unneeded /tmp/$LIB
+	    objcopy --add-gnu-debuglink=$LIB.dbg /tmp/$LIB
+	    install -vm755 /tmp/$LIB /usr/lib
+	    rm /tmp/$LIB
+	done
+	
+	online_usrbin="bash find strip"
+	online_usrlib="libbfd-2.43.1.so
+	               libsframe.so.1.0.0
+	               libhistory.so.8.2
+	               libncursesw.so.6.5
+	               libm.so.6
+	               libreadline.so.8.2
+	               libz.so.1.3.1
+	               libzstd.so.1.5.6
+	               $(cd /usr/lib; find libnss*.so* -type f)"
+	
+	for BIN in $online_usrbin; do
+	    cp /usr/bin/$BIN /tmp/$BIN
+	    strip --strip-unneeded /tmp/$BIN
+	    install -vm755 /tmp/$BIN /usr/bin
+	    rm /tmp/$BIN
+	done
+	
+	for LIB in $online_usrlib; do
+	    cp /usr/lib/$LIB /tmp/$LIB
+	    strip --strip-unneeded /tmp/$LIB
+	    install -vm755 /tmp/$LIB /usr/lib
+	    rm /tmp/$LIB
+	done
+	
+	for i in $(find /usr/lib -type f -name \*.so* ! -name \*dbg) \
+	         $(find /usr/lib -type f -name \*.a)                 \
+	         $(find /usr/{bin,sbin,libexec} -type f); do
+	    case "$online_usrbin $online_usrlib $save_usrlib" in
+	        *$(basename $i)* )
+	            ;;
+	        * ) strip --strip-unneeded $i
+	            ;;
+	    esac
+	done
+	
+	unset BIN LIB save_usrlib online_usrbin online_usrlib
+}
+
+function eic.system.build.clean() {
+	rm -rf /tmp/{*,.*}
+	find /usr/lib /usr/libexec -name \*.la -delete
+	find /usr -depth -name $(uname -m)-lfs-linux-gnu\* | xargs rm -rf
+	userdel -r tester
 }

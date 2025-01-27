@@ -7,23 +7,30 @@ fi
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 EINRICHTER_VER=0.1.0
 
-function main() {
+function booter() {
     einrichter.colours
     echo "Einrichter - TylkoLinux Installer Shell $EINRICHTER_VER
 The script is located at $SCRIPT_DIR
 Run einrichter.help for commands"
-    read -p "einrichter>" Command_Input
+	main
+}
+
+function main() {
+    read -p "einrichter> " Command_Input
     $Command_Input
     main
 }
 
-einrichter.help() {
+function einrichter.help() {
     echo "Einrichter commands:
 einrichter.installer.pkgs - Prepare packages for installation
 einrichter.installer.DirLayout - Set up the directories at the target system
 einrichter.installer.SafeUser - Set up LFS user on host and starting package compilation
 einrichter.installer.chroot - Enter the environment using chroot
 einrichter.help - Show this help dialog
+einrichter.backup.create - Create a backup of the system to the home folder
+einrichter.backup.restore - Restore the aforementioned backup
+exit - Exit the script
 For more information, see https://github.com/kevadesu/TylkoLinux"
 }
 
@@ -100,7 +107,7 @@ function einrichter.colours() {
     export On_IPurple='\033[0;105m'  # Purple
     export On_ICyan='\033[0;106m'    # Cyan
     export On_IWhite='\033[0;107m'   # White
-    echo "[i] The colour variables have been set."
+    echo -e "${Purple}[i] The colour variables have been set.${Color_Off}"
 }
 
 function einrichter.installer.pkgs() {
@@ -218,6 +225,7 @@ function einrichter.installer.chroot() {
         MAKEFLAGS="-j$(nproc)"           \
         TESTSUITEFLAGS="-j$(nproc)"       \
         /bin/bash --login
+    einrichter.installer.chroot.end
 
 }
 
@@ -231,9 +239,9 @@ function einrichter.installer.chroot.end() {
 }
 
 function einrichter.backup.create() {
-    echo -e "[?] Variable LFS points to $LFS. This needs to point to the target LFS system.
+    echo -e "${BRed}[?] Variable LFS points to ${LFS}. This needs to point to the target LFS system.
 If this does NOT point to the LFS directory, EXIT NOW AND SET THE VARIABLE. This will otherwise
-DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED."
+DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED.${Color_Off}"
     read -p "[?] Continue? (y/n) " OPT
     if [ "$OPT" = "y" ]; then echo "Continuing..."; else exit 1; fi
     echo "[i] Unmounting the virtual file systems..."
@@ -248,9 +256,9 @@ DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED."
 }
 
 function einrichter.backup.restore() {
-    echo -e "[?] Variable LFS points to $LFS. This needs to point to the target LFS system.
+    echo -e "${BRed}[?] Variable LFS points to ${LFS}. This needs to point to the target LFS system.
 If this does NOT point to the LFS directory, EXIT NOW AND SET THE VARIABLE. This will otherwise
-DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED."
+DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED.${Color_Off}"
     read -p "[?] Continue? (y/n) " OPT
     echo "[i] Restoring from backup..."
     cd $LFS
@@ -274,4 +282,4 @@ function einrichter.installer.fail() {
     esac
 }
 
-main
+booter

@@ -26,28 +26,34 @@ function main() {
 
 function eic.help() {
     echo "
-    eic.dirs.create - set up directories
-    eic.essentials.create - set up essentials
-    eic.essentials.install - install essential tools
-    eic.clean - clean up environment
-    eic.system.build - build the system
-    eic.system.build.gcc - build GCC. this has been put in a separate function because building GCC alone takes 46 SBU.
-    eic.system.build.continue - continue building the system after successfully building GCC
-    eic.strip - removes unnecessary debug symbols
-    eic.system.build.clean - clean up files after the build process
-    eic.config.network.devicenaming - sets up network interface names
-    eic.config.network.staticip - creates basic config for static ip
-    eic.config.network.dhcp - sets up a basic IPv4 DHCP config
-    eic.config.network.systemd.resolve <on/off/enable/disable> - enables/disables systemd-resolved service
-    eic.config.network.hostname <hostname> - writes hostname to /etc/hostname
-    eic.config.network.staticresolver - use static /etc/resolv.conf configuration after disabling systemd-resolved
-	eic.config.time.createAdj - adjust /etc/adjtime to local time if hardware clock is set to that
-	eic.config.time.clarifyUTC - tell systemd-timedated your hardware clock is set to UTC/Local Time
-	eic.config.time.set - enter the time to set in YYYY-MM-DD HH:MM:SS format
-	eic.config.time.tz <timezone> - set a timezone. use command 'timedatectl list-timezones' to get a list of all timezones
-	eic.config.time.nts <on/off/enable/disable> - switch systemd's Network Time Synchronisation on or off
-    eic.help - show this message
-    "
+eic.dirs.create - set up directories
+eic.essentials.create - set up essentials
+eic.essentials.install - install essential tools
+eic.clean - clean up environment
+eic.system.build - build the system
+eic.system.build.gcc - build GCC. this has been put in a separate function because building GCC alone takes 46 SBU.
+eic.system.build.continue - continue building the system after successfully building GCC
+eic.strip - removes unnecessary debug symbols
+eic.system.build.clean - clean up files after the build process
+eic.config.network.devicenaming - sets up network interface names
+eic.config.network.staticip - creates basic config for static ip
+eic.config.network.dhcp - sets up a basic IPv4 DHCP config
+eic.config.network.systemd.resolve <on/off/enable/disable> - enables/disables systemd-resolved service
+eic.config.network.hostname <hostname> - writes hostname to /etc/hostname
+eic.config.network.staticresolver - use static /etc/resolv.conf configuration after disabling systemd-resolved
+eic.config.time.createAdj - adjust /etc/adjtime to local time if hardware clock is set to that
+eic.config.time.clarifyUTC - tell systemd-timedated your hardware clock is set to UTC/Local Time
+eic.config.time.set - enter the time to set in YYYY-MM-DD HH:MM:SS format
+eic.config.time.tz <timezone> - set a timezone. use command 'timedatectl list-timezones' to get a list of all timezones
+eic.config.time.nts <on/off/enable/disable> - switch systemd's Network Time Synchronisation on or off
+eic.config.console.preset - wipe /etc/vconsole.conf and simply write 'FONT=Lat2-Terminus16' to it
+eic.config.console.keymap <KEYMAP> - write default keymap to /etc/vconsole.conf
+eic.config.create.inputrc - creates the simple but necessary /etc/inputrc file
+eic.config.create.shells - creates the simple but necessary /etc/shells file
+eic.config.systemd.disableScreenClearing <yes/no> - decide whether systemd should clear the screen at the end of the boot sequence or not
+eic.config.systemd.limitCoreDumpSize <(Number)(G/M/K/B) - limits core dump size to value specified as argument
+eic.help - show this message
+"
 }
 
 function eic.dirs.create() {
@@ -458,7 +464,7 @@ EOF
                         --mandir=/usr/share/man  \
                         --disable-rpath
             make
-
+            
             sed -e "s|$SRCDIR/unix|/usr/lib|" \
                 -e "s|$SRCDIR|/usr/include|"   \
                 -i tclConfig.sh
@@ -1766,5 +1772,126 @@ function eic.config.time.nts() {
 	esac
 }
 
-# DNS=192.168.0.1
+function eic.config.console.preset() {
+	echo FONT=Lat2-Terminus16 > /etc/vconsole.conf
+}
+
+function eic.config.console.keymap() {
+	echo "KEYMAP=$@" >> /etc/vconsole.conf
+}
+
+function eic.config.locale.set() {
+	read -p "[i] Enter language code (for example de): " LANGUAGE
+	read -p "[i] Enter country code (for example CH): " COUNTRY
+	read -p "[i] Enter character map code (for example UTF-8): " CHARACTERMAP
+	read -p "[i] Enter modifiers, leave empty if none (needs to start with @): " MODIFIERS
+	echo -e "LANG=${LANGUAGE}_${COUNTRY}.${CHARACTERMAP}${MODIFIERS}" > /etc/locale.conf
+	cat > /etc/profile << "EOF"
+# Begin /etc/profile
+
+for i in $(locale); do
+  unset ${i%=*}
+done
+
+if [[ "$TERM" = linux ]]; then
+  export LANG=C.UTF-8
+else
+  source /etc/locale.conf
+
+  for i in $(locale); do
+    key=${i%=*}
+    if [[ -v $key ]]; then
+      export $key
+    fi
+  done
+fi
+
+# End /etc/profile
+EOF
+}
+
+function eic.config.create.inputrc() {
+	cat > /etc/inputrc << "EOF"
+# Begin /etc/inputrc
+# Modified by Chris Lynn <roryo@roryo.dynup.net>
+
+# Allow the command prompt to wrap to the next line
+set horizontal-scroll-mode Off
+
+# Enable 8-bit input
+set meta-flag On
+set input-meta On
+
+# Turns off 8th bit stripping
+set convert-meta Off
+
+# Keep the 8th bit for display
+set output-meta On
+
+# none, visible or audible
+set bell-style none
+
+# All of the following map the escape sequence of the value
+# contained in the 1st argument to the readline specific functions
+"\eOd": backward-word
+"\eOc": forward-word
+
+# for linux console
+"\e[1~": beginning-of-line
+"\e[4~": end-of-line
+"\e[5~": beginning-of-history
+"\e[6~": end-of-history
+"\e[3~": delete-char
+"\e[2~": quoted-insert
+
+# for xterm
+"\eOH": beginning-of-line
+"\eOF": end-of-line
+
+# for Konsole
+"\e[H": beginning-of-line
+"\e[F": end-of-line
+
+# End /etc/inputrc
+EOF
+}
+
+function eic.config.create.shells() {
+	cat > /etc/shells << "EOF"
+# Begin /etc/shells
+
+/bin/sh
+/bin/bash
+
+# End /etc/shells
+EOF
+}
+
+function eic.config.systemd.disableScreenClearing() {
+	case "$@" in
+		yes|YES|Yes)
+			mkdir -pv /etc/systemd/system/getty@tty1.service.d
+			
+			cat > /etc/systemd/system/getty@tty1.service.d/noclear.conf << EOF
+[Service]
+TTYVTDisallocate=no
+EOF
+			;;
+			no|NO|No)
+				rm /etc/systemd/system/getty@tty1.service.d/noclear.conf
+			;;
+			*)
+				echo "[!] Unrecognised (or empty) argument."
+				echo "[i] Syntax: eic.config.systemd.disableScreenClearing (yes/no)"
+			;;
+	esac
+}
+
+function eic.config.systemd.limitCoreDumpSize() {
+		mkdir -pv /etc/systemd/coredump.conf.d || echo "[i] Great, the directory already exists!"
+		echo -e "
+[Coredump]
+MaxUse=${@}" > /etc/systemd/coredump.conf.d/maxuse.conf
+}
+
 main

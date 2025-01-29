@@ -116,15 +116,14 @@ function einrichter.installer.pkgs() {
     echo -e "${BPurple}[1/6] Downloading package list..."
     wget https://www.linuxfromscratch.org/lfs/view/stable-systemd/wget-list-systemd --continue --directory-prefix=$LFS/sources    
     echo -e "[2/6] Downloading checksum of packages"
-    wget https://www.linuxfromscratch.org/lfs/view/stable-systemd/md5sums --continue --directory-prefix=$LFS/sources
+    wget $SCRIPT_DIR/md5sums --continue --directory-prefix=$LFS/sources
     echo -e "[3/6] Download packages..."
-    wget --input-file=wget-list-systemd --continue --directory-prefix=$LFS/sources
+    wget --input-file=$SCRIPT_DIR/wget-list-systemd --continue --directory-prefix=$LFS/sources
     echo -e "[4/6] Verifying packages..."
     pushd $LFS/sources
         function einrichter.installer.pkgs.verify() {
-            md5sum -c $LFS/sources/md5sums || FAILURE_CODE=ec12737
+            md5sum -c $LFS/sources/md5sums || einrichter.error PKG_VER_ERR
         }
-        einrichter.installer.pkgs.verify || einrichter.installer.fail
     popd
     echo -e "[5/6] Downloading patches..."
     mkdir $LFS/sources/patches
@@ -271,14 +270,18 @@ function einrichter.installer.bg() {
     echo "E"
 }
 
-function einrichter.installer.fail() {
-    case "$FAILURE_CODE" in
-        "ec12737")
+function einrichter.error() {
+    echo -e "${BBlue}[i] ${Blue}The installer has encountered a critical error and needs to quit.${Color_Off}"
+    case "$@" in
+        "PKG_VER_ERR")
             echo -e "${BRed}[!] ${Red}The verification of the packages has failed. This could be an issue on either your side of the Installer's. Please report this error to the github.com/kevadesu/TylkoLinux repository.${Color_Off}"
-            ;;
+        ;;
+        "PKG_DWD_FAIL")
+            echo -e "${BRed}[!] ${Red}Downloading packages, patches and/or the package list . This could be an issue on either your side of the Installer's. Please report this error to the github.com/kevadesu/TylkoLinux repository.${Color_Off}"
+        ;;
         *)
             echo -e "${BRed}[!] ${Red}The installation failed due to an unknown error.${Color_Off}"
-            ;;
+        ;;
     esac
 }
 

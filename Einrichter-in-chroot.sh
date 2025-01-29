@@ -52,6 +52,7 @@ eic.config.create.inputrc - creates the simple but necessary /etc/inputrc file
 eic.config.create.shells - creates the simple but necessary /etc/shells file
 eic.config.systemd.disableScreenClearing <yes/no> - decide whether systemd should clear the screen at the end of the boot sequence or not
 eic.config.systemd.limitCoreDumpSize <(Number)(G/M/K/B) - limits core dump size to value specified as argument
+eic.linux.install - the final boss: install the Linux kernel to the system. can take 0.4-32 SBUs (typically 2.5), MIGHT also be heavy
 eic.help - show this message
 "
 }
@@ -146,7 +147,7 @@ EOF
 }
 
 function eic.essentials.install() {
-    pushd /sources/
+    pushd /sources/ || eic.error D404_SRC
         tar -xvf gettext*xz
         mv gettext-0.22.5 gettext
         pushd gettext/
@@ -1752,7 +1753,7 @@ function eic.config.time.set() {
 }
 
 function eic.config.time.tz() {
-	timedatectl set-timezone $@
+	timedatectl set-timezone "$@"
 }
 
 function eic.config.time.nts() {
@@ -1777,7 +1778,7 @@ function eic.config.console.preset() {
 }
 
 function eic.config.console.keymap() {
-	echo "KEYMAP=$@" >> /etc/vconsole.conf
+	echo "KEYMAP=$*" >> /etc/vconsole.conf
 }
 
 function eic.config.locale.set() {
@@ -1891,7 +1892,61 @@ function eic.config.systemd.limitCoreDumpSize() {
 		mkdir -pv /etc/systemd/coredump.conf.d || echo "[i] Great, the directory already exists!"
 		echo -e "
 [Coredump]
-MaxUse=${@}" > /etc/systemd/coredump.conf.d/maxuse.conf
+MaxUse=$*" > /etc/systemd/coredump.conf.d/maxuse.conf
+}
+
+function eic.linux.install() {
+    pushd /sources/linux/
+        read -p "[i] In this section, it is recommended to have the TylkoLinux build/installation guide open and ready. [ENTER]"
+        make mrproper
+        make menuconfig
+        make
+        make modules_install
+        mount /boot
+        cp -iv arch/x86/boot/bzImage /boot/vmlinuz-6.10.5-lfs-12.2-systemd
+        cp -iv System.map /boot/System.map-6.10.5
+        cp -iv .config /boot/config-6.10.5
+        cp -r Documentation -T /usr/share/doc/linux-6.10.5
+        install -v -m755 -d /etc/modprobe.d
+        cat > /etc/modprobe.d/usb.conf << "EOF"
+# Begin /etc/modprobe.d/usb.conf
+
+install ohci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i ohci_hcd ; true
+install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
+
+# End /etc/modprobe.d/usb.conf
+EOF
+    popd
+}
+
+function eic.signoff() {
+    echo 12.2-systemd-tylux > /etc/lfs-release
+    cat > /etc/lsb-release << "EOF"
+DISTRIB_ID="TylkoLinux"
+DISTRIB_RELEASE="25.01"
+DISTRIB_CODENAME="snyx"
+DISTRIB_DESCRIPTION="TylkoLinux Snyx"
+EOF
+    cat > /etc/os-release << "EOF"
+NAME="TylkoLinux"
+VERSION="25.01"
+ID=tylux
+PRETTY_NAME="TylkoLinux 25.01 Snyx (LFS 12.2-systemd)"
+VERSION_CODENAME="snyx"
+HOME_URL="https://github.com/kevadesu/TylkoLinux"
+EOF
+}
+
+function eic.error() {
+    echo "[i] The installer has encountered a critical error and needs to quit."
+    case "$@" in
+        D404_SRC)
+            echo "[!] Directory /sources/ does NOT exist!"
+        ;;
+        *)
+            echo "[!] We were unable to determine the error."
+        ;;
+    esac
 }
 
 main

@@ -35,6 +35,17 @@ function eic.help() {
     eic.system.build.continue - continue building the system after successfully building GCC
     eic.strip - removes unnecessary debug symbols
     eic.system.build.clean - clean up files after the build process
+    eic.config.network.devicenaming - sets up network interface names
+    eic.config.network.staticip - creates basic config for static ip
+    eic.config.network.dhcp - sets up a basic IPv4 DHCP config
+    eic.config.network.systemd.resolve <on/off/enable/disable> - enables/disables systemd-resolved service
+    eic.config.network.hostname <hostname> - writes hostname to /etc/hostname
+    eic.config.network.staticresolver - use static /etc/resolv.conf configuration after disabling systemd-resolved
+	eic.config.time.createAdj - adjust /etc/adjtime to local time if hardware clock is set to that
+	eic.config.time.clarifyUTC - tell systemd-timedated your hardware clock is set to UTC/Local Time
+	eic.config.time.set - enter the time to set in YYYY-MM-DD HH:MM:SS format
+	eic.config.time.tz <timezone> - set a timezone. use command 'timedatectl list-timezones' to get a list of all timezones
+	eic.config.time.nts <on/off/enable/disable> - switch systemd's Network Time Synchronisation on or off
     eic.help - show this message
     "
 }
@@ -786,8 +797,6 @@ function eic.system.build.gcc() {
     popd
     echo "[i] Finished building GCC"
 }
-
-main
 
 function eic.system.build.continue() {
     pushd /sources/
@@ -1585,24 +1594,177 @@ function eic.strip() {
 }
 
 function eic.system.build.clean() {
-	rm -rf /tmp/{*,.*}
+	rm -rfv /tmp/{*,.*}
 	find /usr/lib /usr/libexec -name \*.la -delete
 	find /usr -depth -name $(uname -m)-lfs-linux-gnu\* | xargs rm -rf
 	userdel -r tester
 }
 
-function eic.config.network() {
-    ip link
+function eic.config.network.devicenaming() {
     ln -s /dev/null /etc/systemd/network/99-default.link
-    read -p "Enter MAC address of desired device: " OPT_MAC
+    read -p "[i] Enter MAC address of desired device: " OPT_MAC
+    read -p "[i] Enter the desired name of your interface: " OPT_NET_INT
     
-    cat > /etc/systemd/network/10-ether0.link << "EOF"
-[Match]
+    echo -e "[Match]
 # Change the MAC address as appropriate for your network device
 MACAddress=${OPT_MAC}
 
 [Link]
-Name=ether0
-EOF
-    d
+Name=${OPT_NET_INT}" > /etc/systemd/network/10-ether0.link
 }
+
+function eic.config.network.staticip() {
+    read -p "[i] Enter the name of the configured interface: " OPT_NET_INT
+	echo -e "[Match]
+Name=${OPT_NET_INT}
+
+[Network]
+Address=192.168.0.2/24
+Gateway=192.168.0.1" > /etc/systemd/network/10-eth-static.network
+	echo "[?] Add DNS? If no, type N. If yes, type DNS address."
+	read -p "> " OPT_NET_DNS
+	case "$OPT_NET_DNS" in
+		N|n|No|no|nO|NO)
+			echo "[i] Skipped DNS addition."
+		;;
+		*)
+			echo -e "DNS=${OPT_NET_DNS}" >> /etc/systemd/network/10-eth-static.network
+		;;
+	esac
+	echo "[?] Add domain? If no, type N. If yes, type domain name."
+	read -p "> " OPT_NET_DOMAIN
+	case "$OPT_NET_DOMAIN" in
+		N|n|No|no|nO|NO)
+			echo "[i] Skipped domain addition."
+		;;
+		*)
+			echo -e "Domains=${OPT_NET_DOMAIN}" >> /etc/systemd/network/10-eth-static.network
+		;;
+	esac
+}
+
+function eic.config.network.dhcp() {
+    read -p "[i] Enter the name of the configured interface: " OPT_NET_INT
+	echo -e "
+[Match]
+Name=${OPT_NET_INT}
+
+[Network]
+DHCP=ipv4
+
+[DHCPv4]
+UseDomains=true" > /etc/systemd/network/10-eth-dhcp.network
+}
+
+
+
+function eic.config.network.systemd.resolve() {
+	case "$@" in
+		on|enable)
+			echo "[i] Enabling systemd-resolved..."
+			systemctl enable systemd-resolved
+		;;
+		off|disable)
+			echo "[i] Disabling systemd-resolved..."
+			systemctl disable systemd-resolved
+		;;
+		*)
+			echo "[!] Unrecognised (or empty) argument."
+			echo "[i] Syntax: eic.config.network.systemd.resolve (on/off/enable/disable)"
+		;;
+	esac
+}
+			
+function eic.config.network.staticresolver() {
+	echo "[?] Add domain? If no, type N. If yes, type domain name."
+	read -p "> " OPT_NET_DOMAIN
+	case "$OPT_NET_DOMAIN" in
+		N|n|No|no|nO|NO)
+			echo "[i] Skipped domain addition."
+		;;
+		*)
+			echo -e "domain ${OPT_NET_DOMAIN}" >> /etc/resolv.conf
+		;;
+	esac
+	echo "[?] Add primary nameserver? If no, type N. If yes, type nameserver name."
+	read -p "> " OPT_NET_NS1
+	case "$OPT_NET_NS1" in
+		N|n|No|no|nO|NO)
+			echo "[i] Skipped primary nameserver addition."
+		;;
+		*)
+			echo -e "nameserver ${OPT_NET_NS1}" >> /etc/resolv.conf
+		;;
+	esac
+	echo "[?] Add secondary nameserver? If no, type N. If yes, type nameserver name."
+	read -p "> " OPT_NET_NS2
+	case "$OPT_NET_NS2" in
+		N|n|No|no|nO|NO)
+			echo "[i] Skipped secondary nameserver addition."
+		;;
+		*)
+			echo -e "nameserver ${OPT_NET_NS2}" >> /etc/resolv.conf
+		;;
+	esac
+#	echo -e "
+## Begin /etc/resolv.conf
+#
+#domain ${OPT_NET_DOMAIN}
+#nameserver ${OPT_NET_NS1}
+#nameserver ${OPT_NET_NS2}
+
+## End /etc/resolv.conf
+#" > /etc/resolv.conf
+}
+
+
+function eic.config.network.hostname() {
+	echo "$@" > /etc/hostname
+}
+
+function eic.config.time.createAdj() {
+	cat > /etc/adjtime << "EOF"
+0.0 0 0.0
+0
+LOCAL
+EOF
+	echo "[i] Adjusted /etc/adjtime according to LFS instructions."
+}
+
+function eic.config.time.clarifyUTC() {
+	timedatectl set-local-rtc 1
+}
+
+function eic.config.time.set() {
+	read -p "[i] Enter year in 4 digits (no spaces): " YEAR
+	read -p "[i] Enter month number in 2 digits (no spaces): " MONTH
+	read -p "[i] Enter day number in 2 digits (no spaces): " DAY
+	read -p "[i] Enter hour in 2 digits (no spaces) (24-hour format): " HOUR
+	read -p "[i] Enter minute in 2 digits (no spaces): " MINUTE
+	read -p "[i] Enter second in 2 digits (no spaces): " SECOND
+	timedatectl set-time $YEAR-$MONTH-$DAY $HOUR:$MINUTE:$SECOND
+}
+
+function eic.config.time.tz() {
+	timedatectl set-timezone $@
+}
+
+function eic.config.time.nts() {
+	case "$@" in
+		on|enable)
+			echo "[i] Enabling Network Time Synchronisation..."
+			systemctl enable systemd-timesyncd
+		;;
+		off|disable)
+			echo "[i] Disabling Network Time Synchronisation..."
+			systemctl disable systemd-timesyncd
+		;;
+		*)
+			echo "[!] Unrecognised (or empty) argument."
+			echo "[i] Syntax: eic.config.time.nts (on/off/enable/disable)"
+		;;
+	esac
+}
+
+# DNS=192.168.0.1
+main

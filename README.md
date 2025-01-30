@@ -1,17 +1,19 @@
-# THIS IS IN AN UNUSABLE STATE. PLEASE WAIT UNTIL A USABLE VERSION RELEASES.
+I FINISHED IT!
+
+Yes, I finished this project just for [High Seas](https://highseas.hackclub.com), that was deadass my only motivation.
 # TylkoLinux
 TylkoLinux, an LFS system
 
-## Status
-LFS v12.2-systemd book chapter: 8.29
+## Installation
+Working on the guide, at [RSCC](https://rootsource.cc/Articles/tylkolinux-installation/)
 
 ## To do
 
 - [ ] ~~Make a package manager~~ Nix will be used
 
-- [ ] Try to make system bootable
+- [X] Try to make system bootable
 
-- [ ] Finish the project in the first place
+- [X] Finish the project in the first place
 
 Maybe maybe maybe:
 

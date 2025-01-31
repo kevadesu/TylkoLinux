@@ -1902,7 +1902,15 @@ function eic.linux.install() {
         make menuconfig
         make
         make modules_install
-        mount /boot
+		read -p "[i] Mount boot partition? <Y/N>: " OPT
+		case $OPT in
+			Y|y|Yes|yes|YES)
+		        mount /boot
+		    ;;
+		    *)
+		        echo "[i] Skipped mount."
+		    ;;
+		esac
         cp -iv arch/x86/boot/bzImage /boot/vmlinuz-6.10.5-lfs-12.2-systemd
         cp -iv System.map /boot/System.map-6.10.5
         cp -iv .config /boot/config-6.10.5

@@ -53,6 +53,8 @@ eic.config.create.shells - creates the simple but necessary /etc/shells file
 eic.config.systemd.disableScreenClearing <yes/no> - decide whether systemd should clear the screen at the end of the boot sequence or not
 eic.config.systemd.limitCoreDumpSize <(Number)(G/M/K/B) - limits core dump size to value specified as argument
 eic.linux.install - the final boss: install the Linux kernel to the system. can take 0.4-32 SBUs (typically 2.5), MIGHT also be heavy
+eic.rpm.install - installs RPM
+eic.eko.install - installs the Eko wrapper for RPM (RPM Package Manager)
 eic.help - show this message
 "
 }
@@ -1925,6 +1927,19 @@ install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
 # End /etc/modprobe.d/usb.conf
 EOF
     popd
+}
+
+function eic.rpm.install() {
+	# Enter /sources/ directory
+	pushd /sources/
+		# Extract needed packages for compiling RPM
+		tar -xvf rpm*.bz
+		mv rpm-4.20.0 rpm
+		tar -xvf
+}
+
+function eic.eko.install() {
+	
 }
 
 function eic.signoff() {

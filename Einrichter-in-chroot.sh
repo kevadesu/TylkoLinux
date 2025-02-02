@@ -1941,6 +1941,36 @@ function eic.rpm.install() {
 		mv debugedit-0.3 debugedit
 		tar -xvf lua*.gz
 		mv lua-5.4.7 lua
+		tar -xvf popt-*.tar.gz
+		mv popt-1.19 popt
+		tar -xvf curl-*.tar.xz
+		mv curl-8.9.1 curl
+		tar -xvf libarchive-3.7.4.tar.xz
+		mv libarchive-3.7.4 libarchive
+		pushd libarchive/
+			./configure --prefix=/usr --disable-static &&
+			make
+			make install
+		popd
+		pushd curl/
+			./configure --prefix=/usr                           \
+			            --disable-static                        \
+			            --with-openssl                          \
+			            --enable-threaded-resolver              \
+			            --with-ca-path=/etc/ssl/certs           \
+			            --without-libpsl
+			make
+			make install &&
+			
+			rm -rf docs/examples/.deps &&
+			
+			find docs \( -name Makefile\* -o  \
+			             -name \*.1       -o  \
+			             -name \*.3       -o  \
+			             -name CMakeLists.txt \) -delete &&
+			
+			cp -v -R docs -T /usr/share/doc/curl-8.9.1
+		popd
 		pushd cmake/
 			sed -i '/"lib64"/s/64//' Modules/GNUInstallDirs.cmake
 			./bootstrap --prefix=/usr        \
@@ -1994,6 +2024,11 @@ EOF
 			cp -v doc/*.{html,css,gif,png} /usr/share/doc/lua-5.4.7 &&
 			
 			install -v -m644 -D lua.pc /usr/lib/pkgconfig/lua.pc
+		popd
+		pushd popt/
+			./configure --prefix=/usr --disable-static
+			make
+			make install
 		popd
 	popd
 }

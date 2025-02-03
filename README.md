@@ -9,7 +9,7 @@ Working on the guide, at [RSCC](https://rootsource.cc/Articles/tylkolinux-instal
 
 ## To do
 
-- [ ] ~~Make a package manager~~ ~~*Nix will be used*~~ Nah fuck that we need an actual package manager
+- [X] ~~Make a package manager~~ ~~*Nix will be used*~~ Nah fuck that we need an actual package manager, and we used RPM!
 
 - [X] Try to make system bootable
 

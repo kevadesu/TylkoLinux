@@ -1933,8 +1933,9 @@ function eic.rpm.install() {
 	# Enter /sources/ directory
 	pushd /sources/
 		# Extract needed packages for compiling RPM
-		tar -xvf cmake*.tar.gz
-		mv cmake-3.31.5 cmake
+		bunzip2 -v -v rpm-4.18.0.tar.bz2
+		tar -xvf rpm-4.18.0*.tar
+		mv rpm-4.18.0 rpm
 		tar -xvf debugedit*.tar.xz
 		mv debugedit-0.3 debugedit
 		tar -xvf lua*.gz
@@ -1950,6 +1951,36 @@ function eic.rpm.install() {
 		tar -xvf libuv-*.gz
 		mv libuv-v1.50.0 libuv
         tar -xvf sqlite-autoconf-3480000.tar.gz
+		tar -xvf libgcrypt-1.11.0.tar.bz2
+		tar -xvf libgpg-error-1.50.tar.bz2
+		mv libgcrypt-1.11.0 libgcrypt
+		mv libgpg-error-1.50 libgpg-error
+		pushd libgpg-error/
+		    ./configure --prefix=/usr &&
+		    make
+		    make install
+		    install -v -m644 -D README /usr/share/doc/libgpg-error-1.50/README
+		popd
+		pushd libgcrypt/
+		    ./configure --prefix=/usr &&
+		    make                      &&
+		
+		    make -C doc html                                                       &&
+		    makeinfo --html --no-split -o doc/gcrypt_nochunks.html doc/gcrypt.texi &&
+		    makeinfo --plaintext       -o doc/gcrypt.txt           doc/gcrypt.texi
+		    make install &&
+		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0 &&
+		    install -v -m644    README doc/{README.apichanges,fips*,libgcrypt*} \
+		                    /usr/share/doc/libgcrypt-1.11.0 &&
+		
+		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0/html &&
+		    install -v -m644 doc/gcrypt.html/* \
+		                    /usr/share/doc/libgcrypt-1.11.0/html &&
+		    install -v -m644 doc/gcrypt_nochunks.html \
+		                    /usr/share/doc/libgcrypt-1.11.0      &&
+		    install -v -m644 doc/gcrypt.{txt,texi} \
+		                    /usr/share/doc/libgcrypt-1.11.0
+		popd
 		pushd libarchive/
 			./configure --prefix=/usr --disable-static &&
 			make
@@ -1985,18 +2016,6 @@ function eic.rpm.install() {
 		pushd libuv/
 			sh autogen.sh                              &&
 			./configure --prefix=/usr --disable-static &&
-			make
-			make install
-		popd
-		pushd cmake/
-			sed -i '/"lib64"/s/64//' Modules/GNUInstallDirs.cmake
-			./bootstrap --prefix=/usr        \
-			            --system-libs         \
-			            --mandir=/share/man    \
-			            --no-system-jsoncpp     \
-			            --no-system-cppdap       \
-			            --no-system-librhash      \
-			            --docdir=/share/doc/cmake-3.31.5
 			make
 			make install
 		popd
@@ -2064,59 +2083,7 @@ EOF
             make
             make install
         popd
-	popd
-}
-
-function eic.rpm.install.fr() {
-	pushd /sources
-		bunzip2 -v -v rpm-4.20.0.tar.bz2
-		tar -xvf rpm*.tar
-		mv rpm-4.20.0 rpm
 		pushd /sources/rpm
-			mkdir _build
-			cd _build
-			cmake -D WITH_AUDIT:BOOL=OFF -D WITH_SELINUX:BOOL=OFF -D WITH_SEQUOIA:BOOL=OFF -D WITH_OPENSSL:BOOL=ON -D ENABLE_TESTSUITE:BOOL=OFF ..
-			make
-			make install
-		popd
-	popd
-}
-
-function eic.rpm.install.fr2() {
-	pushd /sources
-		bunzip2 -v -v rpm-4.18.0.tar.bz2
-		tar -xvf rpm-4.18.0*.tar
-		tar -xvf libgcrypt-1.11.0.tar.bz2
-		tar -xvf libgpg-error-1.50.tar.bz2
-		mv libgcrypt-1.11.0 libgcrypt
-		mv libgpg-error-1.50 libgpg-error
-		pushd libgpg-error/
-		    ./configure --prefix=/usr &&
-		    make
-		    make install
-		    install -v -m644 -D README /usr/share/doc/libgpg-error-1.50/README
-		popd
-		pushd libgcrypt/
-		    ./configure --prefix=/usr &&
-		    make                      &&
-		
-		    make -C doc html                                                       &&
-		    makeinfo --html --no-split -o doc/gcrypt_nochunks.html doc/gcrypt.texi &&
-		    makeinfo --plaintext       -o doc/gcrypt.txt           doc/gcrypt.texi
-		    make install &&
-		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0 &&
-		    install -v -m644    README doc/{README.apichanges,fips*,libgcrypt*} \
-		                    /usr/share/doc/libgcrypt-1.11.0 &&
-		
-		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0/html &&
-		    install -v -m644 doc/gcrypt.html/* \
-		                    /usr/share/doc/libgcrypt-1.11.0/html &&
-		    install -v -m644 doc/gcrypt_nochunks.html \
-		                    /usr/share/doc/libgcrypt-1.11.0      &&
-		    install -v -m644 doc/gcrypt.{txt,texi} \
-		                    /usr/share/doc/libgcrypt-1.11.0
-		popd
-		pushd /sources/rpm-4.18.0
 			./autogen.sh --noconfigure
 			./configure --prefix=/usr
 			make

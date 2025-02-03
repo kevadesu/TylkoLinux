@@ -88,3 +88,8 @@ https://www.linuxfromscratch.org/patches/lfs/12.2/expect-5.45.4-gcc14-1.patch
 https://www.linuxfromscratch.org/patches/lfs/12.2/glibc-2.40-fhs-1.patch
 https://www.linuxfromscratch.org/patches/lfs/12.2/kbd-2.6.4-backspace-1.patch
 https://www.nano-editor.org/dist/v8/nano-8.1.tar.xz
+https://dist.libuv.org/dist/v1.50.0/libuv-v1.50.0.tar.gz
+https://github.com/nghttp2/nghttp2/releases/download/v1.64.0/nghttp2-1.64.0.tar.xz
+https://sqlite.org/2025/sqlite-autoconf-3480000.tar.gz
+https://www.gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-1.11.0.tar.bz2
+https://www.gnupg.org/ftp/gcrypt/libgpg-error/libgpg-error-1.50.tar.bz2

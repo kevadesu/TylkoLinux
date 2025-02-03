@@ -379,7 +379,7 @@ EOF
             sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
             make -f Makefile-libbz2_so
             make clean
-            make
+            make CFLAGS="-fPIC" LDFLAGS="-fPIC"
             make PREFIX=/usr install
             cp -av libbz2.so.* /usr/lib
             ln -sv libbz2.so.1.0.8 /usr/lib/libbz2.so
@@ -1933,8 +1933,6 @@ function eic.rpm.install() {
 	# Enter /sources/ directory
 	pushd /sources/
 		# Extract needed packages for compiling RPM
-		tar -xvf rpm*.bz
-		mv rpm-4.20.0 rpm
 		tar -xvf cmake*.tar.gz
 		mv cmake-3.31.5 cmake
 		tar -xvf debugedit*.tar.xz
@@ -1947,6 +1945,11 @@ function eic.rpm.install() {
 		mv curl-8.9.1 curl
 		tar -xvf libarchive-3.7.4.tar.xz
 		mv libarchive-3.7.4 libarchive
+		tar -xvf nghttp2-*.xz
+		mv nghttp2-1.64.0 nghttp2
+		tar -xvf libuv-*.gz
+		mv libuv-v1.50.0 libuv
+        tar -xvf sqlite-autoconf-3480000.tar.gz
 		pushd libarchive/
 			./configure --prefix=/usr --disable-static &&
 			make
@@ -1970,6 +1973,20 @@ function eic.rpm.install() {
 			             -name CMakeLists.txt \) -delete &&
 			
 			cp -v -R docs -T /usr/share/doc/curl-8.9.1
+		popd
+		pushd nghttp2/
+			./configure --prefix=/usr     \
+			            --disable-static  \
+			            --enable-lib-only \
+			            --docdir=/usr/share/doc/nghttp2-1.64.0 &&
+			make
+			make install
+		popd
+		pushd libuv/
+			sh autogen.sh                              &&
+			./configure --prefix=/usr --disable-static &&
+			make
+			make install
 		popd
 		pushd cmake/
 			sed -i '/"lib64"/s/64//' Modules/GNUInstallDirs.cmake
@@ -2030,16 +2047,81 @@ EOF
 			make
 			make install
 		popd
+		pushd /sources/elfutils/
+			make -C libdw install
+            install -vm644 config/libdw.pc /usr/lib/pkgconfig
+            rm /usr/lib/libdw.a
+
+		popd
+        pushd sqlite-autoconf-3480000/
+            ./configure --prefix=/usr     \
+                        --disable-static  \
+                        --enable-fts{4,5} \
+                        CPPFLAGS="-D SQLITE_ENABLE_COLUMN_METADATA=1 \
+                                  -D SQLITE_ENABLE_UNLOCK_NOTIFY=1   \
+                                  -D SQLITE_ENABLE_DBSTAT_VTAB=1     \
+                                  -D SQLITE_SECURE_DELETE=1"         &&
+            make
+            make install
+        popd
 	popd
 }
 
 function eic.rpm.install.fr() {
-	pushd /sources/rpm
-		mkdir _build
-		cd _build
-		cmake ..
-		make
-		make install
+	pushd /sources
+		bunzip2 -v -v rpm-4.20.0.tar.bz2
+		tar -xvf rpm*.tar
+		mv rpm-4.20.0 rpm
+		pushd /sources/rpm
+			mkdir _build
+			cd _build
+			cmake -D WITH_AUDIT:BOOL=OFF -D WITH_SELINUX:BOOL=OFF -D WITH_SEQUOIA:BOOL=OFF -D WITH_OPENSSL:BOOL=ON -D ENABLE_TESTSUITE:BOOL=OFF ..
+			make
+			make install
+		popd
+	popd
+}
+
+function eic.rpm.install.fr2() {
+	pushd /sources
+		bunzip2 -v -v rpm-4.18.0.tar.bz2
+		tar -xvf rpm-4.18.0*.tar
+		tar -xvf libgcrypt-1.11.0.tar.bz2
+		tar -xvf libgpg-error-1.50.tar.bz2
+		mv libgcrypt-1.11.0 libgcrypt
+		mv libgpg-error-1.50 libgpg-error
+		pushd libgpg-error/
+		    ./configure --prefix=/usr &&
+		    make
+		    make install
+		    install -v -m644 -D README /usr/share/doc/libgpg-error-1.50/README
+		popd
+		pushd libgcrypt/
+		    ./configure --prefix=/usr &&
+		    make                      &&
+		
+		    make -C doc html                                                       &&
+		    makeinfo --html --no-split -o doc/gcrypt_nochunks.html doc/gcrypt.texi &&
+		    makeinfo --plaintext       -o doc/gcrypt.txt           doc/gcrypt.texi
+		    make install &&
+		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0 &&
+		    install -v -m644    README doc/{README.apichanges,fips*,libgcrypt*} \
+		                    /usr/share/doc/libgcrypt-1.11.0 &&
+		
+		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0/html &&
+		    install -v -m644 doc/gcrypt.html/* \
+		                    /usr/share/doc/libgcrypt-1.11.0/html &&
+		    install -v -m644 doc/gcrypt_nochunks.html \
+		                    /usr/share/doc/libgcrypt-1.11.0      &&
+		    install -v -m644 doc/gcrypt.{txt,texi} \
+		                    /usr/share/doc/libgcrypt-1.11.0
+		popd
+		pushd /sources/rpm-4.18.0
+			./autogen.sh --noconfigure
+			./configure --prefix=/usr
+			make
+			make install
+		popd
 	popd
 }
 

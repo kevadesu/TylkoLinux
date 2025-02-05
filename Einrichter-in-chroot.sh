@@ -54,7 +54,7 @@ eic.config.systemd.disableScreenClearing <yes/no> - decide whether systemd shoul
 eic.config.systemd.limitCoreDumpSize <(Number)(G/M/K/B) - limits core dump size to value specified as argument
 eic.linux.install - the final boss: install the Linux kernel to the system. can take 0.4-32 SBUs (typically 2.5), MIGHT also be heavy
 eic.rpm.install - installs RPM
-eic.eko.install - installs the Eko wrapper for RPM (RPM Package Manager)
+eic.zypper.install - installs openSUSE's RPM frontend, Zypper
 eic.help - show this message
 "
 }
@@ -602,8 +602,6 @@ EOF
             make install
             make install-html
         popd
-        tar -xvf attr-2.5.2.tar.gz
-        mv attr-2.5.2 attr
         pushd attr/
             ./configure --prefix=/usr     \
                         --disable-static   \
@@ -613,8 +611,6 @@ EOF
             make check
             make install
         popd
-        tar -xvf acl-2.3.2.tar.xz
-        mv acl-2.3.2 acl
         pushd acl/
             ./configure --prefix=/usr         \
                         --disable-static       \
@@ -622,16 +618,12 @@ EOF
             make
             make install
         popd
-        tar -xvf libcap-2.70.tar.xz 
-        mv libcap-2.70 libcap
         pushd libcap/
             sed -i '/install -m.*STA/d' libcap/Makefile
             make prefix=/usr lib=lib
             make test
             make prefix=/usr lib=lib install
         popd
-        tar -xvf libxcrypt-4.4.36.tar.xz
-        mv libxcrypt-4.4.36 libxcrypt
         pushd libxcrypt/
             ./configure --prefix=/usr                \
                         --enable-hashes=strong,glibc  \
@@ -651,7 +643,6 @@ EOF
             make
             cp -av --remove-destination .libs/libcrypt.so.1* /usr/lib
         popd
-        tar -xvf shadow-4.16.0.tar.xz; mv shadow-4.16.0 shadow
         pushd shadow/
             sed -i 's/groups$(EXEEXT) //' src/Makefile.in
             find man -name Makefile.in -exec sed -i 's/groups\.1 / /'   {} \;
@@ -799,8 +790,6 @@ function eic.system.build.continue() {
             install -d -m755           /usr/share/doc/sed-4.9
             install -m644 doc/sed.html /usr/share/doc/sed-4.9
         popd
-        tar -xvf psmisc-23.7.tar.xz
-        mv psmisc-23.7 psmisc
         pushd psmisc/
             ./configure --prefix=/usr
             make
@@ -900,8 +889,6 @@ EOF
             eic.system.build.continue.bash.ask
             make install
         popd
-        tar -xvf libtool-2.4.7.tar.xz
-        mv libtool-2.4.7 libtool
         pushd libtool/
             ./configure --prefix=/usr
             make
@@ -909,8 +896,6 @@ EOF
             make install
             rm -fv /usr/lib/libltdl.a
         popd
-        tar -xvf gdbm-1.24.tar.gz; 
-        mv gdbm-1.24 gdbm
         pushd gdbm/
             ./configure --prefix=/usr    \
                         --disable-static  \
@@ -919,16 +904,12 @@ EOF
             make check
             make install
         popd
-        tar -xvf gperf-3.1.tar.gz; 
-        mv gperf-3.1 gperf
         pushd gperf/
             ./configure --prefix=/usr --docdir=/usr/share/doc/gperf-3.1
             make
             make -j1 check
             make install
         popd
-        tar -xvf expat-2.6.2.tar.xz; 
-        mv expat-2.6.2 expat
         pushd expat/
             ./configure --prefix=/usr    \
                         --disable-static  \
@@ -938,8 +919,6 @@ EOF
             make install
             install -v -m644 doc/*.{html,css} /usr/share/doc/expat-2.6.2
         popd
-        inetutils-2.5.tar.xz; 
-        mv inetutils-2.5 inetutils
         pushd inetutils/
             sed -i 's/def HAVE_TERMCAP_TGETENT/ 1/' telnet/telnet.c
             ./configure --prefix=/usr        \
@@ -957,8 +936,6 @@ EOF
             make install
             mv -v /usr/{,s}bin/ifconfig
         popd
-        tar -xvf less-661.tar.gz; 
-        mv less-661 less
         pushd less/
             ./configure --prefix=/usr --sysconfdir=/etc
             make
@@ -1006,16 +983,12 @@ EOF
             make install
             unset BUILD_ZLIB BUILD_BZIP2
         popd
-        tar -xvf XML-Parser-2.47.tar.gz; 
-        mv XML-Parser-2.47 XML-Parser
         pushd XML-Parser/
             perl Makefile.PL
             make
             make test
             make install
         popd
-        tar -xvf intltool-0.51.0.tar.gz; 
-        mv intltool-0.51.0 intltool
         pushd intltool/
             sed -i 's:\\\${:\\\$\\{:' intltool-update.in
             ./configure --prefix=/usr
@@ -1024,10 +997,6 @@ EOF
             make install
             install -v -Dm644 doc/I18N-HOWTO /usr/share/doc/intltool-0.51.0/I18N-HOWTO
         popd
-        tar -xvf autoconf-2.72.tar.xz; 
-        tar -xvf automake-1.17.tar.xz; 
-        mv autoconf-2.72 autoconf; 
-        mv automake-1.17 automake
         pushd autoconf/
             ./configure --prefix=/usr
             make
@@ -1076,8 +1045,6 @@ EOF
             eic.system.build.continue.automake.ask
             make install
         popd
-        tar -xvf openssl-3.3.1.tar.gz; 
-        mv openssl-3.3.1 openssl
         pushd openssl/
             ./config --prefix=/usr         \
                     --openssldir=/etc/ssl   \
@@ -1091,8 +1058,6 @@ EOF
             mv -v /usr/share/doc/openssl /usr/share/doc/openssl-3.3.1
             cp -vfr doc/* /usr/share/doc/openssl-3.3.1
         popd
-        tar -xvf kmod-33.tar.xz; 
-        mv kmod-33 kmod
         pushd kmod
             ./configure --prefix=/usr     \
                         --sysconfdir=/etc  \
@@ -1109,8 +1074,6 @@ EOF
                 rm -fv /usr/bin/$target
             done
         popd
-        tar -xvf elfutils-0.191.tar.bz2; 
-        mv elfutils-0.191 elfutils
         pushd elfutils/
             ./configure --prefix=/usr                \
                         --disable-debuginfod          \
@@ -1121,8 +1084,6 @@ EOF
             install -vm644 config/libelf.pc /usr/lib/pkgconfig
             rm /usr/lib/libelf.a
         popd
-        tar -xvf libffi-3.4.6.tar.gz; 
-        mv libffi-3.4.6 libffi
         pushd libffi/
         	./configure --prefix=/usr          \
         	            --disable-static        \
@@ -1169,26 +1130,18 @@ EOF
             cp -R --no-preserve=mode python-3.12.5-docs-html/* \
                 /usr/share/doc/python-3.12.5/html
         popd
-        tar -xvf flit_core-3.9.0.tar.gz; 
-        mv flit_core-3.9.0 flit_core
         pushd flit_core/
         	pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
         	pip3 install --no-index --no-user --find-links dist flit_core
         popd
-        tar -xvf wheel-0.44.0.tar.gz; 
-        mv wheel-0.44.0 wheel
         pushd wheel/
         	pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
         	pip3 install --no-index --find-links=dist wheel
         popd
-        tar -xvf setuptools-72.2.0.tar.gz; 
-        mv setuptools-72.2.0 setuptools
         pushd setuptools/
         	pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
         	pip3 install --no-index --find-links dist setuptools
         popd
-        tar -xvf ninja-1.12.1.tar.gz; 
-        mv ninja-1.12.1 ninja
         pushd ninja/
         	export NINJAJOBS=4
         	sed -i '/int Guess/a \
@@ -1202,8 +1155,6 @@ if ( j > 0 ) return j;\
 			install -vDm644 misc/bash-completion /usr/share/bash-completion/completions/ninja
 			install -vDm644 misc/zsh-completion  /usr/share/zsh/site-functions/_ninja
 		popd
-		tar -xvf meson-1.5.1.tar.gz; 
-		mv meson-1.5.1 meson
 		pushd meson/
 			pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
 			pip3 install --no-index --find-links dist meson
@@ -1222,8 +1173,6 @@ if ( j > 0 ) return j;\
 			mv -v /usr/share/man/man1/chroot.1 /usr/share/man/man8/chroot.8
 			sed -i 's/"1"/"8"/' /usr/share/man/man8/chroot.8
 		popd
-		tar -xvf check-0.15.2.tar.gz; 
-		mv check-0.15.2 check
 		pushd check/
 			./configure --prefix=/usr --disable-static
 			make
@@ -1248,15 +1197,11 @@ if ( j > 0 ) return j;\
             make
             make install
         popd
-        tar -xvf groff-1.23.0.tar.gz; 
-        mv groff-1.23.0 groff
         pushd groff/
             PAGE=A4 ./configure --prefix=/usr # European standard
             make
             make install
         popd
-        tar -xvf grub-2.12.tar.xz; 
-        mv grub-2.12 grub
         pushd grub/
             unset {C,CPP,CXX,LD}FLAGS
             echo depends bli part_gpt > grub-core/extra_deps.lst
@@ -1273,8 +1218,6 @@ if ( j > 0 ) return j;\
             make
             make install
         popd
-        tar -xvf iproute2-6.10.0.tar.xz; 
-        mv iproute2-6.10.0 iproute2
         pushd iproute/
             sed -i /ARPD/d Makefile
             rm -fv man/man8/arpd.8
@@ -1283,8 +1226,6 @@ if ( j > 0 ) return j;\
             mkdir -pv             /usr/share/doc/iproute2-6.10.0
             cp -v COPYING README* /usr/share/doc/iproute2-6.10.0
         popd
-        tar -xvf kbd-2.6.4.tar.xz; 
-        mv kbd-2.6.4 kbd
         pushd kbd/
             patch -Np1 -i ../kbd-2.6.4-backspace-1.patch
             sed -i '/RESIZECONS_PROGS=/s/yes/no/' configure
@@ -1295,8 +1236,6 @@ if ( j > 0 ) return j;\
             make install
             cp -R -v docs/doc -T /usr/share/doc/kbd-2.6.4
         popd
-        tar -xvf libpipeline-1.5.7.tar.gz; 
-        mv libpipeline-1.5.7 libpipeline
         pushd libpipeline/
             ./configure --prefix=/usr
             make
@@ -1348,8 +1287,6 @@ if ( j > 0 ) return j;\
             make install
             make TEXMF=/usr/share/texmf install-tex
         popd
-        tar -xvf nano-8.1.tar.xz; 
-        mv nano-8.1 nano
         pushd nano/
             ./configure --prefix=/usr     \
                         --sysconfdir=/etc  \
@@ -1359,20 +1296,14 @@ if ( j > 0 ) return j;\
             make install
             install -v -m644 doc/{nano.html,sample.nanorc} /usr/share/doc/nano-8.1
         popd
-        tar -xvf MarkupSafe-2.1.5.tar.gz; 
-        mv MarkupSafe-2.1.5 MarkupSafe
         pushd MarkupSafe/
             pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
             pip3 install --no-index --no-user --find-links dist Markupsafe
         popd
-        tar -xvf jinja2-3.1.4.tar.gz; 
-        mv jinja2-3.1.4 jinja
         pushd jinja/
             pip3 wheel -w dist --no-cache-dir --no-build-isolation --no-deps $PWD
             pip3 install --no-index --no-user --find-links dist Jinja2
         popd
-        tar -xvf systemd-256.4.tar.gz; 
-        mv systemd-256.4 systemd
         pushd systemd/
             sed -i -e 's/GROUP="render"/GROUP="video"/' \
                    -e 's/GROUP="sgx", //' rules.d/50-udev-default.rules.in
@@ -1408,8 +1339,6 @@ if ( j > 0 ) return j;\
             systemd-machine-id-setup
             systemctl preset-all
         popd
-        tar -xvf dbus-1.14.10.tar.xz; 
-        mv dbus-1.14.10 dbus
         pushd dbus/
             ./configure --prefix=/usr                        \
                         --sysconfdir=/etc                     \
@@ -1426,8 +1355,6 @@ if ( j > 0 ) return j;\
             make install
             ln -sfv /etc/machine-id /var/lib/dbus
         popd
-        tar -xvf man-db-2.12.1.tar.xz; 
-        mv man-db-2.12.1 man-db
         pushd man-db/
             ./configure --prefix=/usr                         \
                         --docdir=/usr/share/doc/man-db-2.12.1  \
@@ -1441,8 +1368,6 @@ if ( j > 0 ) return j;\
             make check
             make install
         popd
-        tar -xvf procps-ng-4.0.4.tar.xz; 
-        mv procps-ng-4.0.4 procps-ng
         pushd procps-ng/
             ./configure --prefix=/usr                           \
                         --docdir=/usr/share/doc/procps-ng-4.0.4  \
@@ -1474,8 +1399,6 @@ if ( j > 0 ) return j;\
             make
             make install
         popd
-        tar -xvf e2fsprogs-1.47.1.tar.gz; 
-        mv e2fsprogs-1.47.1 e2fsprogs
         pushd e2fsprogs/
             mkdir -v build
             cd       build
@@ -1495,6 +1418,104 @@ if ( j > 0 ) return j;\
             makeinfo -o      doc/com_err.info ../lib/et/com_err.texinfo
             install -v -m644 doc/com_err.info /usr/share/info
             install-info --dir-file=/usr/share/info/dir /usr/share/info/com_err.info
+        popd
+		pushd curl/
+			./configure --prefix=/usr                           \
+			            --disable-static                        \
+			            --with-openssl                          \
+			            --enable-threaded-resolver              \
+			            --with-ca-path=/etc/ssl/certs           \
+			            --without-libpsl
+			make
+			make install &&
+			
+			rm -rf docs/examples/.deps &&
+			
+			find docs \( -name Makefile\* -o  \
+			             -name \*.1       -o  \
+			             -name \*.3       -o  \
+			             -name CMakeLists.txt \) -delete &&
+			
+			cp -v -R docs -T /usr/share/doc/curl-8.9.1
+		popd
+        pushd git/
+            ./configure --prefix=/usr \
+                        --with-gitconfig=/etc/gitconfig \
+                        --with-python=python3 &&
+            make
+            make perllibdir=/usr/lib/perl5/5.40/site_perl install
+            ## Prone to certificate errors
+            tar -xvf ../git-manpages-2.48.1.tar.xz \
+                -C /usr/share/man --no-same-owner --no-overwrite-dir
+            mkdir -vp   /usr/share/doc/git-2.48.1 &&
+            tar   -xvf   ../git-htmldocs-2.48.1.tar.xz \
+                  -C    /usr/share/doc/git-2.48.1 --no-same-owner --no-overwrite-dir &&
+
+            find        /usr/share/doc/git-2.48.1 -type d -exec chmod 755 {} \; &&
+            find        /usr/share/doc/git-2.48.1 -type f -exec chmod 644 {} \;
+            mkdir -vp /usr/share/doc/git-2.48.1/man-pages/{html,text}         &&
+            mv        /usr/share/doc/git-2.48.1/{git*.txt,man-pages/text}     &&
+            mv        /usr/share/doc/git-2.48.1/{git*.,index.,man-pages/}html &&
+
+            mkdir -vp /usr/share/doc/git-2.48.1/technical/{html,text}         &&
+            mv        /usr/share/doc/git-2.48.1/technical/{*.txt,text}        &&
+            mv        /usr/share/doc/git-2.48.1/technical/{*.,}html           &&
+
+            mkdir -vp /usr/share/doc/git-2.48.1/howto/{html,text}             &&
+            mv        /usr/share/doc/git-2.48.1/howto/{*.txt,text}            &&
+            mv        /usr/share/doc/git-2.48.1/howto/{*.,}html               &&
+
+            sed -i '/^<a href=/s|howto/|&html/|' /usr/share/doc/git-2.48.1/howto-index.html &&
+            sed -i '/^\* link:/s|howto/|&html/|' /usr/share/doc/git-2.48.1/howto-index.txt
+        popd
+        pushd wget/
+            ./configure --prefix=/usr      \
+                        --sysconfdir=/etc  \
+                        --with-ssl=openssl &&
+            make
+            make install
+        popd
+        pushd libtasn1/
+            ./configure --prefix=/usr --disable-static &&
+            make
+            make install
+        popd
+        pushd p11-kit/
+            sed '20,$ d' -i trust/trust-extract-compat &&
+
+            cat >> trust/trust-extract-compat << "EOF"
+# Copy existing anchor modifications to /etc/ssl/local
+/usr/libexec/make-ca/copy-trust-modifications
+
+# Update trust stores
+/usr/sbin/make-ca -r
+EOF
+            mkdir p11-build &&
+cd    p11-build &&
+
+            meson setup ..            \
+                  --prefix=/usr       \
+                  --buildtype=release \
+                  -D trust_paths=/etc/pki/anchors &&
+            ninja
+            ninja install &&
+            ln -sfv /usr/libexec/p11-kit/trust-extract-compat \
+                    /usr/bin/update-ca-certificates
+            ln -sfv ./pkcs11/p11-kit-trust.so /usr/lib/libnssckbi.so
+        popd
+        pushd make-ca/
+            make install &&
+            install -vdm755 /etc/ssl/local
+            /usr/sbin/make-ca -g
+            wget http://www.cacert.org/certs/root.crt &&
+            wget http://www.cacert.org/certs/class3.crt &&
+            openssl x509 -in root.crt -text -fingerprint -setalias "CAcert Class 1 root" \
+                    -addtrust serverAuth -addtrust emailProtection -addtrust codeSigning \
+                    > /etc/ssl/local/CAcert_Class_1_root.pem &&
+            openssl x509 -in class3.crt -text -fingerprint -setalias "CAcert Class 3 root" \
+                    -addtrust serverAuth -addtrust emailProtection -addtrust codeSigning \
+                    > /etc/ssl/local/CAcert_Class_3_root.pem &&
+            /usr/sbin/make-ca -r
         popd
     popd
     echo "[i] The system build has successfully finished."
@@ -1886,6 +1907,129 @@ EOF
     popd
 }
 
+function eic.plus() {
+    pushd /sources/
+        tar -xvf NetworkManager-1.48.8.tar.xz
+        mv NetworkManager-1.48.8 NetworkManager
+        tar -xvf polkit-125.tar.gz
+        mv polkit-125 polkit
+        tar -xvf glib-2.80.4.tar.xz
+        mv glib-2.80.4 glib
+        tar -xvf packaging-24.1.tar.gz
+        mv packaging-24.1 packaging
+        tar -xvf newt-0.52.24.tar.gz
+        mv newt-0.52.24 newt
+        tar -xvf slang-2.3.3.tar.bz2
+        mv slang-2.3.3 slang
+        tar -xvf gpm-1.20.7.tar.bz2
+        mv gpm-1.20.7 gpm
+        pushd gpm/
+            patch -Np1 -i ../gpm-1.20.7-consolidated-1.patch                &&
+            ./autogen.sh                                                    &&
+            ./configure --prefix=/usr --sysconfdir=/etc ac_cv_path_emacs=no &&
+            make            
+            make install                                          &&
+
+            install-info --dir-file=/usr/share/info/dir           \
+                         /usr/share/info/gpm.info                 &&
+
+            rm -fv /usr/lib/libgpm.a                              &&
+            ln -sfv libgpm.so.2.1.0 /usr/lib/libgpm.so            &&
+            install -v -m644 conf/gpm-root.conf /etc              &&
+
+            install -v -m755 -d /usr/share/doc/gpm-1.20.7/support &&
+            install -v -m644    doc/support/*                     \
+                                /usr/share/doc/gpm-1.20.7/support &&
+            install -v -m644    doc/{FAQ,HACK_GPM,README*}        \
+                                /usr/share/doc/gpm-1.20.7
+        popd
+        pushd slang/
+            ./configure --prefix=/usr \
+                        --sysconfdir=/etc \
+                        --with-readline=gnu &&
+            make -j1 RPATH=
+            make install_doc_dir=/usr/share/doc/slang-2.3.3   \
+                    SLSH_DOC_DIR=/usr/share/doc/slang-2.3.3/slsh \
+                    RPATH= install
+        popd
+        if [ -d "/sources/popt" ]; then
+            echo "[i] popt has already been extracted, it seems.";
+        else
+            tar -xvf popt-*.tar.gz
+		    mv popt-1.19 popt
+        fi
+        pushd popt/
+            ./configure --prefix=/usr --disable-static &&
+            make
+            make install
+        popd
+        pushd newt/
+            sed -e '/install -m 644 $(LIBNEWT)/ s/^/#/' \
+                -e '/$(LIBNEWT):/,/rv/ s/^/#/'          \
+                -e 's/$(LIBNEWT)/$(LIBNEWTSH)/g'        \
+                -i Makefile.in                          &&
+
+            ./configure --prefix=/usr           \
+                        --with-gpm-support      \
+                        --with-python=python3.12 &&
+            make
+            make install
+        popd
+        pushd packaging/
+            pip3 wheel -w dist --no-build-isolation --no-deps --no-cache-dir $PWD
+            pip3 install --no-index --find-links=dist --no-cache-dir --no-user packaging
+        popd
+        pushd glib/
+            patch -Np1 -i ../glib-skip_warnings-1.patch
+            if [ -e /usr/include/glib-2.0 ]; then
+                rm -rf /usr/include/glib-2.0.old &&
+                mv -vf /usr/include/glib-2.0{,.old}
+            fi
+            mkdir build
+            cd    build &&
+            
+            meson setup ..                  \
+                  --prefix=/usr             \
+                  --buildtype=release       \
+                  -D introspection=disabled #\
+                  # -D man-pages=enabled      
+            ninja
+            ninja install
+            tar xf ../../gobject-introspection-1.80.1.tar.xz &&
+
+            meson setup gobject-introspection-1.80.1 gi-build \
+                        --prefix=/usr --buildtype=release     &&
+            ninja -C gi-build
+            ninja -C gi-build install
+
+            meson configure -D introspection=enabled &&
+            ninja
+            ninja install
+        popd
+        tar -xvf duktape-2.7.0.tar.xz
+        mv duktape-2.7.0 duktape
+        pushd duktape/
+            sed -i 's/-Os/-O2/' Makefile.sharedlibrary
+            make -f Makefile.sharedlibrary INSTALL_PREFIX=/usr
+            make -f Makefile.sharedlibrary INSTALL_PREFIX=/usr install
+        popd
+        pushd polkit/
+            groupadd -fg 27 polkitd &&
+            useradd -c "PolicyKit Daemon Owner" -d /etc/polkit-1 -u 27 \
+                    -g polkitd -s /bin/false polkitd
+            mkdir build &&
+            cd    build &&
+
+            meson setup ..                   \
+                  --prefix=/usr              \
+                  --buildtype=release        \
+                  -D man=true                \
+                  -D session_tracking=logind \
+                  -D tests=true
+            
+    popd
+}
+
 function eic.rpm.install() {
 	# Enter /sources/ directory
 	pushd /sources/
@@ -1942,25 +2086,6 @@ function eic.rpm.install() {
 			./configure --prefix=/usr --disable-static &&
 			make
 			make install
-		popd
-		pushd curl/
-			./configure --prefix=/usr                           \
-			            --disable-static                        \
-			            --with-openssl                          \
-			            --enable-threaded-resolver              \
-			            --with-ca-path=/etc/ssl/certs           \
-			            --without-libpsl
-			make
-			make install &&
-			
-			rm -rf docs/examples/.deps &&
-			
-			find docs \( -name Makefile\* -o  \
-			             -name \*.1       -o  \
-			             -name \*.3       -o  \
-			             -name CMakeLists.txt \) -delete &&
-			
-			cp -v -R docs -T /usr/share/doc/curl-8.9.1
 		popd
 		pushd nghttp2/
 			./configure --prefix=/usr     \
@@ -2049,7 +2174,7 @@ EOF
 	popd
 }
 
-function eic.eko.install() {
+function eic.zypper.install() {
 	echo "Not implemented"
 }
 

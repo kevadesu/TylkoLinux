@@ -30,6 +30,7 @@ einrichter.installer.chroot - Enter the environment using chroot
 einrichter.help - Show this help dialog
 einrichter.backup.create - Create a backup of the system to the home folder
 einrichter.backup.restore - Restore the aforementioned backup
+einrichter.xr - Extracts everything in $LFS/sources/ and renames them to the same package name without the version number
 exit - Exit the script
 For more information, see https://github.com/kevadesu/TylkoLinux"
 }
@@ -273,7 +274,7 @@ function einrichter.installer.bg() {
 function einrichter.xr() {
     echo "[i] Extracting and renaming ALL packages..."
     sleep 0.5
-    pushd $LFS/sources/ || einrichter.error
+    pushd $LFS/sources/ || einrichter.error DIR404_SRC
         tar -xvf gcc-14.2.0.tar.xz 
         mv -v gcc-14.2.0 gcc
         pushd $LFS/sources/gcc
@@ -320,6 +321,137 @@ function einrichter.xr() {
         mv tar-1.35 tar
         tar -xvf xz-5.6.2.tar.*z
         mv xz-5.6.2 xz
+        tar -xvf gettext*xz
+        mv gettext-0.22.5 gettext
+        tar -xvf bison*xz
+        mv bison-3.8.2 bison
+        tar -xvf perl*xz
+        mv perl-5.40.0 perl
+        tar -xvf Python*xz
+        mv Python-3.12.5 python
+        tar -xvf texinfo*xz
+        mv texinfo-7.1 texinfo
+        tar -xvf util-linux*.xz
+        mv util-linux-2.40.2 util-linux
+        tar -xvf man-pages-6.9.1.tar.xz
+        mv man-pages-6.9.1.tar.xz man-pages
+        tar -xvf iana-etc-20240806.tar.gz
+        tar -xvf zlib-1.3.1.tar.gz
+        mv zlib-1.3.1 zlib
+        tar -xvf bzip2-1.0.8.tar.gz
+        mv bzip2-1.0.8 bzip2
+        tar -xvf lz4-1.10.0.tar.gz
+        mv lz4-1.10.0 lz4
+        tar -xvf zstd-1.5.6.tar.gz
+        mv zstd-1.5.6 zstd
+        tar -xvf readline-8.2.13.tar.gz
+        mv readline-8.2.13 readline
+        tar -xvf bc-6.7.6.tar.xz
+        mv bc-6.7.6 bc
+        tar -xvf flex-2.6.4.tar.gz
+        mv flex-2.6.4 flex
+        tar -xvf tcl8.6.14-src.tar.gz
+        mv tcl8.6.14 tcl
+        tar -xvf expect5.45.4.tar.gz
+        mv expect5.45.4 expect
+        tar -xvf dejagnu-1.6.3.tar.gz
+        mv dejagnu-1.6.3 dejagnu
+        tar -xvf pkgconf-2.3.0.tar.xz
+        mv pkgconf-2.3.0 pkgconf
+        tar -xvf gmp-6.3.0.tar.xz
+        mv gmp-6.3.0 gmp
+        tar -xvf mpfr-4.2.1.tar.xz
+        mv mpfr-4.2.1 mpfr
+        tar -xvf mpc-1.3.1.tar.gz
+        mv mpc-1.3.1 mpc
+        tar -xvf attr-2.5.2.tar.gz
+        mv attr-2.5.2 attr
+        tar -xvf acl-2.3.2.tar.xz
+        mv acl-2.3.2 acl
+        tar -xvf libcap-2.70.tar.xz 
+        mv libcap-2.70 libcap
+        tar -xvf libxcrypt-4.4.36.tar.xz
+        mv libxcrypt-4.4.36 libxcrypt
+        tar -xvf shadow-4.16.0.tar.xz
+        mv shadow-4.16.0 shadow
+        tar -xvf psmisc-23.7.tar.xz
+        mv psmisc-23.7 psmisc
+        tar -xvf libtool-2.4.7.tar.xz
+        mv libtool-2.4.7 libtool
+        tar -xvf gdbm-1.24.tar.gz 
+        mv gdbm-1.24 gdbm
+        tar -xvf gperf-3.1.tar.gz; 
+        mv gperf-3.1 gperf
+        tar -xvf expat-2.6.2.tar.xz; 
+        mv expat-2.6.2 expat
+        tar -xvf inetutils-2.5.tar.xz 
+        mv inetutils-2.5 inetutils
+        tar -xvf less-661.tar.gz; 
+        mv less-661 less
+        tar -xvf XML-Parser-2.47.tar.gz; 
+        mv XML-Parser-2.47 XML-Parser
+        tar -xvf intltool-0.51.0.tar.gz; 
+        mv intltool-0.51.0 intltool
+        tar -xvf autoconf-2.72.tar.xz; 
+        tar -xvf automake-1.17.tar.xz; 
+        mv autoconf-2.72 autoconf; 
+        mv automake-1.17 automake
+        tar -xvf openssl-3.3.1.tar.gz; 
+        mv openssl-3.3.1 openssl
+        tar -xvf kmod-33.tar.xz; 
+        mv kmod-33 kmod
+        tar -xvf elfutils-0.191.tar.bz2; 
+        mv elfutils-0.191 elfutils
+        tar -xvf libffi-3.4.6.tar.gz; 
+        mv libffi-3.4.6 libffi
+        tar -xvf flit_core-3.9.0.tar.gz; 
+        mv flit_core-3.9.0 flit_core
+        tar -xvf wheel-0.44.0.tar.gz; 
+        mv wheel-0.44.0 wheel
+        tar -xvf setuptools-72.2.0.tar.gz; 
+        mv setuptools-72.2.0 setuptools
+        tar -xvf ninja-1.12.1.tar.gz; 
+        mv ninja-1.12.1 ninja
+		tar -xvf meson-1.5.1.tar.gz; 
+		mv meson-1.5.1 meson
+		tar -xvf check-0.15.2.tar.gz; 
+		mv check-0.15.2 check
+        tar -xvf groff-1.23.0.tar.gz; 
+        mv groff-1.23.0 groff
+        tar -xvf grub-2.12.tar.xz; 
+        mv grub-2.12 grub
+        tar -xvf iproute2-6.10.0.tar.xz; 
+        mv iproute2-6.10.0 iproute2
+        tar -xvf kbd-2.6.4.tar.xz; 
+        mv kbd-2.6.4 kbd
+        tar -xvf libpipeline-1.5.7.tar.gz; 
+        mv libpipeline-1.5.7 libpipeline
+        tar -xvf nano-8.1.tar.xz; 
+        mv nano-8.1 nano
+        tar -xvf MarkupSafe-2.1.5.tar.gz; 
+        mv MarkupSafe-2.1.5 MarkupSafe
+        tar -xvf jinja2-3.1.4.tar.gz; 
+        mv jinja2-3.1.4 jinja
+        tar -xvf systemd-256.4.tar.gz; 
+        mv systemd-256.4 systemd
+        tar -xvf dbus-1.14.10.tar.xz; 
+        mv dbus-1.14.10 dbus
+        tar -xvf man-db-2.12.1.tar.xz; 
+        mv man-db-2.12.1 man-db
+        tar -xvf procps-ng-4.0.4.tar.xz; 
+        mv procps-ng-4.0.4 procps-ng
+        tar -xvf e2fsprogs-1.47.1.tar.gz; 
+        mv e2fsprogs-1.47.1 e2fsprogs
+        tar -xvf git-2.48.1.tar.xz
+        mv git-2.48.1 git
+        tar -xvf wget-1.24.5.tar.gz
+        mv wget-1.24.5 wget
+        tar -xvf p11-kit-0.25.5.tar.xz
+        mv p11-kit-0.25.5 p11-kit
+        tar -xvf make-ca-1.14.tar.gz
+        mv make-ca-1.14 make-ca
+        tar -xvf libtasn1-4.19.0.tar.gz
+        mv libtasn1-4.19.0 libtasn1
 }
 
 function einrichter.error() {
@@ -330,6 +462,9 @@ function einrichter.error() {
         ;;
         "PKG_DWD_FAIL")
             echo -e "${BRed}[!] ${Red}Downloading packages, patches and/or the package list . This could be an issue on either your side of the Installer's. Please report this error to the github.com/kevadesu/TylkoLinux repository.${Color_Off}"
+        ;;
+        D404_SRC)
+            echo "[!] Directory /sources/ does NOT exist!"
         ;;
         *)
             echo -e "${BRed}[!] ${Red}The installation failed due to an unknown error.${Color_Off}"

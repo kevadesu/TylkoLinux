@@ -270,6 +270,58 @@ function einrichter.installer.bg() {
     echo "E"
 }
 
+function einrichter.xr() {
+    echo "[i] Extracting and renaming ALL packages..."
+    sleep 0.5
+    pushd $LFS/sources/ || einrichter.error
+        tar -xvf gcc-14.2.0.tar.xz 
+        mv -v gcc-14.2.0 gcc
+        pushd $LFS/sources/gcc
+            tar -xf ../mpfr-4.2.1.tar.xz
+            mv -v mpfr-4.2.1 mpfr
+            tar -xf ../gmp-6.3.0.tar.xz
+            mv -v gmp-6.3.0 gmp
+            tar -xf ../mpc-1.3.1.tar.gz
+            mv -v mpc-1.3.1 mpc
+        popd
+        tar -xvf $LFS/sources/binutils-2.43.1.tar.xz
+        mv binutils-2.43.1 binutils
+        tar -xvf linux-6.10.5.tar.xz
+        mv -v linux-6.10.5 linux
+        tar -xvf glibc-2.40.tar.xz
+        mv -v glibc-2.40 glibc
+        tar -xvf coreutils-9.5.tar.xz
+        mv coreutils-9.5 coreutils
+        tar -xvf diffutils-3.10.tar.xz
+        mv diffutils-3.10 diffutils
+        tar -xvf file-5.45.tar.gz
+        mv file-5.45 file
+        tar -xvf m4-1.4.19.tar.xz
+        mv m4-1.4.19 m4
+        tar -xvf ncurses-6.5.tar.gz
+        mv ncurses-6.5 ncurses
+        tar -xvf bash-5.2.32.tar.gz
+        mv bash-5.2.32 bash
+        tar -xvf findutils-4.10.0.tar.xz
+        mv findutils-4.10.0.tar.xz findutils
+        tar -xvf gawk-5.3.0.tar.*z
+        mv gawk-5.3.0 gawk
+        tar -xvf grep-3.11.tar.*z
+        mv grep-3.11 grep
+        tar -xvf gzip-1.13.tar.*z
+        mv gzip-1.13 gzip
+        tar -xvf make-4.4.1.tar.*z
+        mv make-4.4.1 make
+        tar -xvf patch-2.7.6.tar.*z
+        mv patch-2.7.6 patch
+        tar -xvf sed-4.9.tar.*z
+        mv sed-4.9 sed
+        tar -xvf tar-1.35*
+        mv tar-1.35 tar
+        tar -xvf xz-5.6.2.tar.*z
+        mv xz-5.6.2 xz
+}
+
 function einrichter.error() {
     echo -e "${BBlue}[i] ${Blue}The installer has encountered a critical error and needs to quit.${Color_Off}"
     case "$@" in
@@ -283,6 +335,7 @@ function einrichter.error() {
             echo -e "${BRed}[!] ${Red}The installation failed due to an unknown error.${Color_Off}"
         ;;
     esac
+    exit 1
 }
 
 booter

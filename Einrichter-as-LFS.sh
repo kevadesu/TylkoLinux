@@ -103,8 +103,6 @@ function eal.install.cross-toolchain() {
     EIR_PKG=binutils
     eal.notification.extracting
     sleep 0.5
-    tar -xvf $LFS/sources/binutils-2.43.1.tar.xz
-    mv binutils-2.43.1 binutils
     cd $LFS/sources/binutils/
     mkdir -v build
     cd       build
@@ -124,15 +122,7 @@ function eal.install.cross-toolchain() {
     make install
     eal.notification.extracting
     pushd $LFS/sources/
-        tar -xvf gcc-14.2.0.tar.xz 
-        mv -v gcc-14.2.0 gcc
         pushd $LFS/sources/gcc/
-            tar -xf ../mpfr-4.2.1.tar.xz
-            mv -v mpfr-4.2.1 mpfr
-            tar -xf ../gmp-6.3.0.tar.xz
-            mv -v gmp-6.3.0 gmp
-            tar -xf ../mpc-1.3.1.tar.gz
-            mv -v mpc-1.3.1 mpc
             case $(uname -m) in
                 x86_64)
                     sed -e '/m64=/s/lib64/lib/' \
@@ -172,8 +162,6 @@ function eal.install.cross-toolchain() {
         popd
         EIR_PKG=linux
         eal.notification.extracting
-        tar -xvf linux-6.10.5.tar.xz
-        mv -v linux-6.10.5 linux
         pushd $LFS/sources/linux/
             make mrproper
             make headers
@@ -182,8 +170,6 @@ function eal.install.cross-toolchain() {
         popd
         EIR_PKG=glibc
         eal.notification.extracting
-        tar -xvf glibc-2.40.tar.xz
-        mv -v glibc-2.40 glibc
         echo -e "I: -- The installer is creating a symbolic link for LSB compliance. Depending on architecture, it may also create a compatibility symbolic link for proper operation of the dynamic library loader. --"
         case $(uname -m) in
             i?86)   ln -sfv ld-linux.so.2 $LFS/lib/ld-lsb.so.3
@@ -251,8 +237,6 @@ function eal.install.cross-toolchain() {
             rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
         popd
         EIR_PKG=M4
-        tar -xvf m4-1.4.19.tar.xz
-        mv m4-1.4.19 m4
         pushd $LFS/sources/m4/
             eal.notification.buildconf
             ./configure --prefix=/usr   \
@@ -264,8 +248,6 @@ function eal.install.cross-toolchain() {
             make DESTDIR=$LFS install
         popd
         EIR_PKG=ncurses
-        tar -xvf ncurses-6.5.tar.gz
-        mv ncurses-6.5 ncurses
         pushd $LFS/sources/ncurses
             sed -i s/mawk// configure
             mkdir build
@@ -295,8 +277,6 @@ function eal.install.cross-toolchain() {
                -i $LFS/usr/include/curses.h
         popd
         EIR_PKG=bash
-        tar -xvf bash-5.2.32.tar.gz
-        mv bash-5.2.32 bash
         pushd $LFS/soruces/bash
             eal.notification.buildconf
             ./configure --prefix=/usr                      \
@@ -312,8 +292,6 @@ function eal.install.cross-toolchain() {
         popd
         EIR_PKG=coreutils
         eal.notification.extracting
-        tar -xvf coreutils-9.5.tar.xz
-        mv coreutils-9.5 coreutils
         pushd $LFS/sources/coreutils
             eal.notification.buildconf
             ./configure --prefix=/usr                     \
@@ -332,8 +310,6 @@ function eal.install.cross-toolchain() {
         popd
         EIR_PKG=diffutils
         echo "Install notifications will not be shown for small packages, as it will be obvious which action will be executed." && sleep 10
-        tar -xvf diffutils-3.10.tar.xz
-        mv diffutils-3.10 diffutils
         pushd $LFS/sources/diffutils
             ./configure --prefix=/usr   \
                         --host=$LFS_TGT  \
@@ -341,8 +317,6 @@ function eal.install.cross-toolchain() {
             make
             make DESTDIR=$LFS install
         popd
-        tar -xvf file-5.45.tar.gz
-        mv file-5.45 file
         pushd $LFS/sources/file
         mkdir build
         pushd build
@@ -356,8 +330,6 @@ function eal.install.cross-toolchain() {
         make FILE_COMPILE=$(pwd)/build/src/file
         make DESTDIR=$LFS install
         rm -v $LFS/usr/lib/libmagic.la
-        tar -xvf findutils-4.10.0.tar.xz
-        mv findutils-4.10.0.tar.xz findutils
         pushd $LFS/sources/findutils
             ./configure --prefix=/usr                   \
                         --localstatedir=/var/lib/locate  \
@@ -366,8 +338,6 @@ function eal.install.cross-toolchain() {
             make
             make DESTDIR=$LFS install
         popd
-        tar -xvf gawk-5.3.0.tar.*z
-        mv gawk-5.3.0 gawk
         pushd $LFS/sources/gawk
             sed -i 's/extras//' Makefile.in
             ./configure --prefix=/usr   \
@@ -376,8 +346,6 @@ function eal.install.cross-toolchain() {
             make
             make DESTDIR=$LFS install
         popd
-        tar -xvf grep-3.11.tar.*z
-        mv grep-3.11 grep
         pushd $LFS/sources/grep
             ./configure --prefix=/usr   \
                         --host=$LFS_TGT  \
@@ -385,15 +353,11 @@ function eal.install.cross-toolchain() {
             make
             make DESTDIR=$LFS install
         popd
-        tar -xvf gzip-1.13.tar.*z
-        mv gzip-1.13 gzip
         pushd $LFS/sources/gzip
             ./configure --prefix=/usr --host=$LFS_TGT
             make
             make DESTDIR=$LFS install
         popd
-        tar -xvf make-4.4.1.tar.*z
-        mv make-4.4.1 make
         pushd $LFS/sources/make
             ./configure --prefix=/usr   \
                         --without-guile  \
@@ -402,8 +366,6 @@ function eal.install.cross-toolchain() {
             make
             make DESTDIR=$LFS install
         popd
-        tar -xvf patch-2.7.6.tar.*z
-        mv patch-2.7.6 patch
         pushd $LFS/sources/patch
             ./configure --prefix=/usr   \
                         --host=$LFS_TGT  \
@@ -411,9 +373,6 @@ function eal.install.cross-toolchain() {
             make
             make DESTDIR=$LFS install
         popd
-
-        tar -xvf sed-4.9.tar.*z
-        mv sed-4.9 sed
         # From here on I got lazy with the script to get it over with Chapter 6 faster, I'll fix all of this when TylkoLinux is in last Beta stage
         pushd sed
             ./configure --prefix=/usr   \
@@ -422,8 +381,6 @@ function eal.install.cross-toolchain() {
             make
             make DESTDIR=$LFS install
         popd
-        tar -xvf tar-1.35*
-        mv tar-1.35 tar
         pushd tar
             ./configure --prefix=/usr                     \
                         --host=$LFS_TGT                    \
@@ -431,8 +388,6 @@ function eal.install.cross-toolchain() {
             make
             make DESTDIR=$LFS install
         popd
-        tar -xvf xz-5.6.2.tar.*z
-        mv xz-5.6.2 xz
         pushd $LFS/sources/xz
             ./configure --prefix=/usr                     \
                         --host=$LFS_TGT                    \

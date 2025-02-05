@@ -53,6 +53,8 @@ eic.config.create.shells - creates the simple but necessary /etc/shells file
 eic.config.systemd.disableScreenClearing <yes/no> - decide whether systemd should clear the screen at the end of the boot sequence or not
 eic.config.systemd.limitCoreDumpSize <(Number)(G/M/K/B) - limits core dump size to value specified as argument
 eic.linux.install - the final boss: install the Linux kernel to the system. can take 0.4-32 SBUs (typically 2.5), MIGHT also be heavy
+eic.rpm.install - installs RPM
+eic.eko.install - installs the Eko wrapper for RPM (RPM Package Manager)
 eic.help - show this message
 "
 }
@@ -148,73 +150,61 @@ EOF
 
 function eic.essentials.install() {
     pushd /sources/ || eic.error D404_SRC
-        tar -xvf gettext*xz
-        mv gettext-0.22.5 gettext
         pushd gettext/
-        ./configure --disable-shared
-        make
-        cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /usr/bin
+            ./configure --disable-shared
+            make
+            cp -v gettext-tools/src/{msgfmt,msgmerge,xgettext} /usr/bin
         popd
-        tar -xvf bison*xz
-        mv bison-3.8.2 bison
         pushd bison/
-        ./configure --prefix=/usr \
-            --docdir=/usr/share/doc/bison-3.8.2
-        make
-        make install
+            ./configure --prefix=/usr \
+                --docdir=/usr/share/doc/bison-3.8.2
+            make
+            make install
         popd
-        tar -xvf perl*xz
-        mv perl-5.40.0 perl
         pushd perl/
-        sh Configure -des                                 \
-             -D prefix=/usr                                \
-             -D vendorprefix=/usr                           \
-             -D useshrplib                                   \
-             -D privlib=/usr/lib/perl5/5.40/core_perl         \
-             -D archlib=/usr/lib/perl5/5.40/core_perl          \
-             -D sitelib=/usr/lib/perl5/5.40/site_perl           \
-             -D sitearch=/usr/lib/perl5/5.40/site_perl           \
-             -D vendorlib=/usr/lib/perl5/5.40/vendor_perl         \
-             -D vendorarch=/usr/lib/perl5/5.40/vendor_perl
-        make
-        make install
+            sh Configure -des                                 \
+                -D prefix=/usr                                 \
+                -D vendorprefix=/usr                            \
+                -D useshrplib                                    \
+                -D privlib=/usr/lib/perl5/5.40/core_perl          \
+                -D archlib=/usr/lib/perl5/5.40/core_perl           \
+                -D sitelib=/usr/lib/perl5/5.40/site_perl            \
+                -D sitearch=/usr/lib/perl5/5.40/site_perl            \
+                -D vendorlib=/usr/lib/perl5/5.40/vendor_perl          \
+                -D vendorarch=/usr/lib/perl5/5.40/vendor_perl 
+            make
+            make install
         popd
-        tar -xvf Python*xz
-        mv Python-3.12.5 python
         pushd python/
-        ./configure --prefix=/usr   \
-                --enable-shared      \
-                --without-ensurepip
-        make
-        make install
+            ./configure --prefix=/usr   \
+                    --enable-shared      \
+                    --without-ensurepip
+            make
+            make install
         popd
-        tar -xvf texinfo*xz
-        mv texinfo-7.1 texinfo
         pushd texinfo/
-        ./configure --prefix=/usr
-        make
-        make install
+            ./configure --prefix=/usr
+            make
+            make install
         popd
-        tar -xvf util-linux*.xz
-        mv util-linux-2.40.2 util-linux
         pushd util-linux/
-        mkdir -pv /var/lib/hwclock
-        ./configure --libdir=/usr/lib     \
-            --runstatedir=/run             \
-            --disable-chfn-chsh             \
-            --disable-login                  \
-            --disable-nologin                 \
-            --disable-su                       \
-            --disable-setpriv                   \
-            --disable-runuser                    \
-            --disable-pylibmount                  \
-            --disable-static                       \
-            --disable-liblastlog2                   \
-            --without-python                         \
-            ADJTIME_PATH=/var/lib/hwclock/adjtime     \
-            --docdir=/usr/share/doc/util-linux-2.40.2
-        make
-        make install
+            mkdir -pv /var/lib/hwclock
+            ./configure --libdir=/usr/lib     \
+                --runstatedir=/run             \
+                --disable-chfn-chsh             \
+                --disable-login                  \
+                --disable-nologin                 \
+                --disable-su                       \
+                --disable-setpriv                   \
+                --disable-runuser                    \
+                --disable-pylibmount                  \
+                --disable-static                       \
+                --disable-liblastlog2                   \
+                --without-python                         \
+                ADJTIME_PATH=/var/lib/hwclock/adjtime     \
+                --docdir=/usr/share/doc/util-linux-2.40.2
+            make
+            make install
         popd
     popd
 }
@@ -227,13 +217,10 @@ function eic.clean() {
 
 function eic.system.build() {
     pushd /sources
-        tar -xvf man-pages-6.9.1.tar.xz
-        mv man-pages-6.9.1.tar.xz man-pages
         pushd man-pages
             rm -v man3/crypt*
             make prefix=/usr install
         popd
-        tar -xvf iana-etc-20240806.tar.gz
         pushd iana-etc-20240806
             cp services protocols /etc
         popd
@@ -360,8 +347,6 @@ include /etc/ld.so.conf.d/*.conf
 EOF
             mkdir -pv /etc/ld.so.conf.d
         popd
-        tar -xvf zlib-1.3.1.tar.gz
-        mv zlib-1.3.1 zlib
         pushd zlib/
             ./configure --prefix=/usr
             make
@@ -369,15 +354,13 @@ EOF
             make install
             rm -fv /usr/lib/libz.a
         popd
-        tar -xvf bzip2-1.0.8.tar.gz
-        mv bzip2-1.0.8 bzip2
         pushd bzip2/
             patch -Np1 -i ../bzip2-1.0.8-install_docs-1.patch
             sed -i 's@\(ln -s -f \)$(PREFIX)/bin/@\1@' Makefile
             sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
             make -f Makefile-libbz2_so
             make clean
-            make
+            make CFLAGS="-fPIC" LDFLAGS="-fPIC"
             make PREFIX=/usr install
             cp -av libbz2.so.* /usr/lib
             ln -sv libbz2.so.1.0.8 /usr/lib/libbz2.so
@@ -395,15 +378,11 @@ EOF
             make check
             make install
         popd
-        tar -xvf lz4-1.10.0.tar.gz
-        mv lz4-1.10.0 lz4
         pushd lz4/
             make BUILD_STATIC=no PREFIX=/usr
             make -j1 check
             make BUILD_STATIC=no PREFIX=/usr install
         popd
-        tar -xvf zstd-1.5.6.tar.gz
-        mv zstd-1.5.6 zstd
         pushd zstd/
             make prefix=/usr
             make check
@@ -416,8 +395,6 @@ EOF
             make check
             make install
         popd
-        tar -xvf readline-8.2.13.tar.gz
-        mv readline-8.2.13 readline
         pushd readline/
             sed -i '/MV.*old/d' Makefile.in
             sed -i '/{OLDSUFF}/c:' support/shlib-install
@@ -436,16 +413,12 @@ EOF
             make check
             make install
         popd
-        tar -xvf bc-6.7.6.tar.xz
-        mv bc-6.7.6 bc
         pushd bc/
             CC=gcc ./configure --prefix=/usr -G -O3 -r
             make
             make test
             make install
         popd
-        tar -xvf flex-2.6.4.tar.gz
-        mv flex-2.6.4 flex
         pushd flex/
             ./configure --prefix=/usr             \
                 --docdir=/usr/share/doc/flex-2.6.4 \
@@ -456,8 +429,6 @@ EOF
             ln -sv flex   /usr/bin/lex
             ln -sv flex.1 /usr/share/man/man1/lex.1
         popd
-        tar -xvf tcl8.6.14-src.tar.gz
-        mv tcl8.6.14 tcl
         pushd tcl/
             SRCDIR=$(pwd)
             cd unix
@@ -494,8 +465,6 @@ EOF
             mkdir -v -p /usr/share/doc/tcl-8.6.14
             cp -v -r  ./html/* /usr/share/doc/tcl-8.6.14
         popd
-        tar -xvf expect5.45.4.tar.gz
-        mv expect5.45.4 expect
         pushd expect/
             eic.system.build.expect.intervention() {
                 if [[ $(python3 -c 'from pty import spawn; spawn(["echo", "ok"])') != "ok" ]]; then
@@ -534,8 +503,6 @@ EOF
             make install
             ln -svf expect5.45.4/libexpect5.45.4.so /usr/lib
         popd
-        tar -xvf dejagnu-1.6.3.tar.gz
-        mv dejagnu-1.6.3 dejagnu
         pushd dejagnu/
             mkdir -v build
             cd       build
@@ -547,8 +514,6 @@ EOF
             install -v -dm755  /usr/share/doc/dejagnu-1.6.3
             install -v -m644   doc/dejagnu.{html,txt} /usr/share/doc/dejagnu-1.6.3
         popd
-        tar -xvf pkgconf-2.3.0.tar.xz
-        mv pkgconf-2.3.0 pkgconf
         pushd pkgconf/
             ./configure --prefix=/usr              \
                         --disable-static            \
@@ -579,8 +544,6 @@ EOF
             make tooldir=/usr install
             rm -fv /usr/lib/lib{bfd,ctf,ctf-nobfd,gprofng,opcodes,sframe}.a
         popd
-        tar -xvf gmp-6.3.0.tar.xz
-        mv gmp-6.3.0 gmp
         pushd gmp/
             ./configure --prefix=/usr         \
                         --enable-cxx           \
@@ -618,8 +581,6 @@ EOF
             make install
             make install-html
         popd
-        tar -xvf mpfr-4.2.1.tar.xz
-        mv mpfr-4.2.1 mpfr
         pushd mpfr/
             ./configure --prefix=/usr        \
                         --disable-static      \
@@ -631,8 +592,6 @@ EOF
             make install
             make install-html
         popd
-        tar -xvf mpc-1.3.1.tar.gz
-        mv mpc-1.3.1 mpc
         pushd mpc/
             ./configure --prefix=/usr    \
                         --disable-static  \
@@ -1925,6 +1884,173 @@ install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
 # End /etc/modprobe.d/usb.conf
 EOF
     popd
+}
+
+function eic.rpm.install() {
+	# Enter /sources/ directory
+	pushd /sources/
+		# Extract needed packages for compiling RPM
+		bunzip2 -v -v rpm-4.18.0.tar.bz2
+		tar -xvf rpm-4.18.0*.tar
+		mv rpm-4.18.0 rpm
+		tar -xvf debugedit*.tar.xz
+		mv debugedit-0.3 debugedit
+		tar -xvf lua*.gz
+		mv lua-5.4.7 lua
+		tar -xvf popt-*.tar.gz
+		mv popt-1.19 popt
+		tar -xvf curl-*.tar.xz
+		mv curl-8.9.1 curl
+		tar -xvf libarchive-3.7.4.tar.xz
+		mv libarchive-3.7.4 libarchive
+		tar -xvf nghttp2-*.xz
+		mv nghttp2-1.64.0 nghttp2
+		tar -xvf libuv-*.gz
+		mv libuv-v1.50.0 libuv
+        tar -xvf sqlite-autoconf-3480000.tar.gz
+		tar -xvf libgcrypt-1.11.0.tar.bz2
+		tar -xvf libgpg-error-1.50.tar.bz2
+		mv libgcrypt-1.11.0 libgcrypt
+		mv libgpg-error-1.50 libgpg-error
+		pushd libgpg-error/
+		    ./configure --prefix=/usr &&
+		    make
+		    make install
+		    install -v -m644 -D README /usr/share/doc/libgpg-error-1.50/README
+		popd
+		pushd libgcrypt/
+		    ./configure --prefix=/usr &&
+		    make                      &&
+		
+		    make -C doc html                                                       &&
+		    makeinfo --html --no-split -o doc/gcrypt_nochunks.html doc/gcrypt.texi &&
+		    makeinfo --plaintext       -o doc/gcrypt.txt           doc/gcrypt.texi
+		    make install &&
+		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0 &&
+		    install -v -m644    README doc/{README.apichanges,fips*,libgcrypt*} \
+		                    /usr/share/doc/libgcrypt-1.11.0 &&
+		
+		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0/html &&
+		    install -v -m644 doc/gcrypt.html/* \
+		                    /usr/share/doc/libgcrypt-1.11.0/html &&
+		    install -v -m644 doc/gcrypt_nochunks.html \
+		                    /usr/share/doc/libgcrypt-1.11.0      &&
+		    install -v -m644 doc/gcrypt.{txt,texi} \
+		                    /usr/share/doc/libgcrypt-1.11.0
+		popd
+		pushd libarchive/
+			./configure --prefix=/usr --disable-static &&
+			make
+			make install
+		popd
+		pushd curl/
+			./configure --prefix=/usr                           \
+			            --disable-static                        \
+			            --with-openssl                          \
+			            --enable-threaded-resolver              \
+			            --with-ca-path=/etc/ssl/certs           \
+			            --without-libpsl
+			make
+			make install &&
+			
+			rm -rf docs/examples/.deps &&
+			
+			find docs \( -name Makefile\* -o  \
+			             -name \*.1       -o  \
+			             -name \*.3       -o  \
+			             -name CMakeLists.txt \) -delete &&
+			
+			cp -v -R docs -T /usr/share/doc/curl-8.9.1
+		popd
+		pushd nghttp2/
+			./configure --prefix=/usr     \
+			            --disable-static  \
+			            --enable-lib-only \
+			            --docdir=/usr/share/doc/nghttp2-1.64.0 &&
+			make
+			make install
+		popd
+		pushd libuv/
+			sh autogen.sh                              &&
+			./configure --prefix=/usr --disable-static &&
+			make
+			make install
+		popd
+		pushd debugedit/
+			./configure --prefix=/usr 
+			make
+			make install
+		popd
+		pushd lua/
+			cat > lua.pc << "EOF"
+V=5.4
+R=5.4.7
+
+prefix=/usr
+INSTALL_BIN=${prefix}/bin
+INSTALL_INC=${prefix}/include
+INSTALL_LIB=${prefix}/lib
+INSTALL_MAN=${prefix}/share/man/man1
+INSTALL_LMOD=${prefix}/share/lua/${V}
+INSTALL_CMOD=${prefix}/lib/lua/${V}
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+			
+Name: Lua
+Description: An Extensible Extension Language
+Version: ${R}
+Requires:
+Libs: -L${libdir} -llua -lm -ldl
+Cflags: -I${includedir}
+EOF
+			patch -Np1 -i ../lua-5.4.7-shared_library-1.patch
+			make linux
+			make all install
+			make INSTALL_TOP=/usr                \
+			     INSTALL_DATA="cp -d"            \
+			     INSTALL_MAN=/usr/share/man/man1 \
+			     TO_LIB="liblua.so liblua.so.5.4 liblua.so.5.4.7" \
+			     install &&
+			
+			mkdir -pv                      /usr/share/doc/lua-5.4.7 &&
+			cp -v doc/*.{html,css,gif,png} /usr/share/doc/lua-5.4.7 &&
+			
+			install -v -m644 -D lua.pc /usr/lib/pkgconfig/lua.pc
+		popd
+		pushd popt/
+			./configure --prefix=/usr --disable-static
+			make
+			make install
+		popd
+		pushd /sources/elfutils/
+			make -C libdw install
+            install -vm644 config/libdw.pc /usr/lib/pkgconfig
+            rm /usr/lib/libdw.a
+
+		popd
+        pushd sqlite-autoconf-3480000/
+            ./configure --prefix=/usr     \
+                        --disable-static  \
+                        --enable-fts{4,5} \
+                        CPPFLAGS="-D SQLITE_ENABLE_COLUMN_METADATA=1 \
+                                  -D SQLITE_ENABLE_UNLOCK_NOTIFY=1   \
+                                  -D SQLITE_ENABLE_DBSTAT_VTAB=1     \
+                                  -D SQLITE_SECURE_DELETE=1"         &&
+            make
+            make install
+        popd
+		pushd /sources/rpm
+			./autogen.sh --noconfigure
+			./configure --prefix=/usr
+			make
+			make install
+		popd
+	popd
+}
+
+function eic.eko.install() {
+	echo "Not implemented"
 }
 
 function eic.signoff() {

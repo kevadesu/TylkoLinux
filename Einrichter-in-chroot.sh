@@ -53,6 +53,8 @@ eic.config.create.shells - creates the simple but necessary /etc/shells file
 eic.config.systemd.disableScreenClearing <yes/no> - decide whether systemd should clear the screen at the end of the boot sequence or not
 eic.config.systemd.limitCoreDumpSize <(Number)(G/M/K/B) - limits core dump size to value specified as argument
 eic.linux.install - the final boss: install the Linux kernel to the system. can take 0.4-32 SBUs (typically 2.5), MIGHT also be heavy
+eic.rpm.install - installs RPM
+eic.eko.install - installs the Eko wrapper for RPM (RPM Package Manager)
 eic.help - show this message
 "
 }
@@ -377,7 +379,7 @@ EOF
             sed -i "s@(PREFIX)/man@(PREFIX)/share/man@g" Makefile
             make -f Makefile-libbz2_so
             make clean
-            make
+            make CFLAGS="-fPIC" LDFLAGS="-fPIC"
             make PREFIX=/usr install
             cp -av libbz2.so.* /usr/lib
             ln -sv libbz2.so.1.0.8 /usr/lib/libbz2.so
@@ -1925,6 +1927,173 @@ install uhci_hcd /sbin/modprobe ehci_hcd ; /sbin/modprobe -i uhci_hcd ; true
 # End /etc/modprobe.d/usb.conf
 EOF
     popd
+}
+
+function eic.rpm.install() {
+	# Enter /sources/ directory
+	pushd /sources/
+		# Extract needed packages for compiling RPM
+		bunzip2 -v -v rpm-4.18.0.tar.bz2
+		tar -xvf rpm-4.18.0*.tar
+		mv rpm-4.18.0 rpm
+		tar -xvf debugedit*.tar.xz
+		mv debugedit-0.3 debugedit
+		tar -xvf lua*.gz
+		mv lua-5.4.7 lua
+		tar -xvf popt-*.tar.gz
+		mv popt-1.19 popt
+		tar -xvf curl-*.tar.xz
+		mv curl-8.9.1 curl
+		tar -xvf libarchive-3.7.4.tar.xz
+		mv libarchive-3.7.4 libarchive
+		tar -xvf nghttp2-*.xz
+		mv nghttp2-1.64.0 nghttp2
+		tar -xvf libuv-*.gz
+		mv libuv-v1.50.0 libuv
+        tar -xvf sqlite-autoconf-3480000.tar.gz
+		tar -xvf libgcrypt-1.11.0.tar.bz2
+		tar -xvf libgpg-error-1.50.tar.bz2
+		mv libgcrypt-1.11.0 libgcrypt
+		mv libgpg-error-1.50 libgpg-error
+		pushd libgpg-error/
+		    ./configure --prefix=/usr &&
+		    make
+		    make install
+		    install -v -m644 -D README /usr/share/doc/libgpg-error-1.50/README
+		popd
+		pushd libgcrypt/
+		    ./configure --prefix=/usr &&
+		    make                      &&
+		
+		    make -C doc html                                                       &&
+		    makeinfo --html --no-split -o doc/gcrypt_nochunks.html doc/gcrypt.texi &&
+		    makeinfo --plaintext       -o doc/gcrypt.txt           doc/gcrypt.texi
+		    make install &&
+		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0 &&
+		    install -v -m644    README doc/{README.apichanges,fips*,libgcrypt*} \
+		                    /usr/share/doc/libgcrypt-1.11.0 &&
+		
+		    install -v -dm755   /usr/share/doc/libgcrypt-1.11.0/html &&
+		    install -v -m644 doc/gcrypt.html/* \
+		                    /usr/share/doc/libgcrypt-1.11.0/html &&
+		    install -v -m644 doc/gcrypt_nochunks.html \
+		                    /usr/share/doc/libgcrypt-1.11.0      &&
+		    install -v -m644 doc/gcrypt.{txt,texi} \
+		                    /usr/share/doc/libgcrypt-1.11.0
+		popd
+		pushd libarchive/
+			./configure --prefix=/usr --disable-static &&
+			make
+			make install
+		popd
+		pushd curl/
+			./configure --prefix=/usr                           \
+			            --disable-static                        \
+			            --with-openssl                          \
+			            --enable-threaded-resolver              \
+			            --with-ca-path=/etc/ssl/certs           \
+			            --without-libpsl
+			make
+			make install &&
+			
+			rm -rf docs/examples/.deps &&
+			
+			find docs \( -name Makefile\* -o  \
+			             -name \*.1       -o  \
+			             -name \*.3       -o  \
+			             -name CMakeLists.txt \) -delete &&
+			
+			cp -v -R docs -T /usr/share/doc/curl-8.9.1
+		popd
+		pushd nghttp2/
+			./configure --prefix=/usr     \
+			            --disable-static  \
+			            --enable-lib-only \
+			            --docdir=/usr/share/doc/nghttp2-1.64.0 &&
+			make
+			make install
+		popd
+		pushd libuv/
+			sh autogen.sh                              &&
+			./configure --prefix=/usr --disable-static &&
+			make
+			make install
+		popd
+		pushd debugedit/
+			./configure --prefix=/usr 
+			make
+			make install
+		popd
+		pushd lua/
+			cat > lua.pc << "EOF"
+V=5.4
+R=5.4.7
+
+prefix=/usr
+INSTALL_BIN=${prefix}/bin
+INSTALL_INC=${prefix}/include
+INSTALL_LIB=${prefix}/lib
+INSTALL_MAN=${prefix}/share/man/man1
+INSTALL_LMOD=${prefix}/share/lua/${V}
+INSTALL_CMOD=${prefix}/lib/lua/${V}
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+			
+Name: Lua
+Description: An Extensible Extension Language
+Version: ${R}
+Requires:
+Libs: -L${libdir} -llua -lm -ldl
+Cflags: -I${includedir}
+EOF
+			patch -Np1 -i ../lua-5.4.7-shared_library-1.patch
+			make linux
+			make all install
+			make INSTALL_TOP=/usr                \
+			     INSTALL_DATA="cp -d"            \
+			     INSTALL_MAN=/usr/share/man/man1 \
+			     TO_LIB="liblua.so liblua.so.5.4 liblua.so.5.4.7" \
+			     install &&
+			
+			mkdir -pv                      /usr/share/doc/lua-5.4.7 &&
+			cp -v doc/*.{html,css,gif,png} /usr/share/doc/lua-5.4.7 &&
+			
+			install -v -m644 -D lua.pc /usr/lib/pkgconfig/lua.pc
+		popd
+		pushd popt/
+			./configure --prefix=/usr --disable-static
+			make
+			make install
+		popd
+		pushd /sources/elfutils/
+			make -C libdw install
+            install -vm644 config/libdw.pc /usr/lib/pkgconfig
+            rm /usr/lib/libdw.a
+
+		popd
+        pushd sqlite-autoconf-3480000/
+            ./configure --prefix=/usr     \
+                        --disable-static  \
+                        --enable-fts{4,5} \
+                        CPPFLAGS="-D SQLITE_ENABLE_COLUMN_METADATA=1 \
+                                  -D SQLITE_ENABLE_UNLOCK_NOTIFY=1   \
+                                  -D SQLITE_ENABLE_DBSTAT_VTAB=1     \
+                                  -D SQLITE_SECURE_DELETE=1"         &&
+            make
+            make install
+        popd
+		pushd /sources/rpm
+			./autogen.sh --noconfigure
+			./configure --prefix=/usr
+			make
+			make install
+		popd
+	popd
+}
+
+function eic.eko.install() {
+	echo "Not implemented"
 }
 
 function eic.signoff() {

@@ -1517,6 +1517,12 @@ cd    p11-build &&
                     > /etc/ssl/local/CAcert_Class_3_root.pem &&
             /usr/sbin/make-ca -r
         popd
+        cat > /usr/bin/which << "EOF"
+#!/bin/bash
+type -pa "$@" | head -n 1 ; exit ${PIPESTATUS[0]}
+EOF
+        chmod -v 755 /usr/bin/which
+        chown -v root:root /usr/bin/which
     popd
     echo "[i] The system build has successfully finished."
 }
@@ -2013,6 +2019,291 @@ function eic.plus() {
             make -f Makefile.sharedlibrary INSTALL_PREFIX=/usr
             make -f Makefile.sharedlibrary INSTALL_PREFIX=/usr install
         popd
+        tar -xvf Linux-PAM-1.6.1.tar.xz
+        mv Linux-PAM-1.6.1 Linux-PAM
+        pushd Linux-PAM/
+            autoreconf -fi
+            tar -xvf ../Linux-PAM-1.6.1-docs.tar.xz --strip-components=1
+            ./configure --prefix=/usr                        \
+                        --sbindir=/usr/sbin                  \
+                        --sysconfdir=/etc                    \
+                        --libdir=/usr/lib                    \
+                        --enable-securedir=/usr/lib/security \
+                        --docdir=/usr/share/doc/Linux-PAM-1.6.1 &&
+
+            make
+            install -v -m755 -d /etc/pam.d &&
+
+            make install &&
+            chmod -v 4755 /usr/sbin/unix_chkpwd
+
+            install -vdm755 /etc/pam.d &&
+            cat > /etc/pam.d/system-account << "EOF" &&
+# Begin /etc/pam.d/system-account
+
+account   required    pam_unix.so
+
+# End /etc/pam.d/system-account
+EOF
+
+            cat > /etc/pam.d/system-auth << "EOF" &&
+# Begin /etc/pam.d/system-auth
+
+auth      required    pam_unix.so
+
+# End /etc/pam.d/system-auth
+EOF
+
+            cat > /etc/pam.d/system-session << "EOF" &&
+# Begin /etc/pam.d/system-session
+
+session   required    pam_unix.so
+
+# End /etc/pam.d/system-session
+EOF
+
+            cat > /etc/pam.d/system-password << "EOF"
+# Begin /etc/pam.d/system-password
+
+# use yescrypt hash for encryption, use shadow, and try to use any
+# previously defined authentication token (chosen password) set by any
+# prior module.
+password  required    pam_unix.so       yescrypt shadow try_first_pass
+
+# End /etc/pam.d/system-password
+EOF
+            cat > /etc/pam.d/other << "EOF"
+# Begin /etc/pam.d/other
+
+auth        required        pam_warn.so
+auth        required        pam_deny.so
+account     required        pam_warn.so
+account     required        pam_deny.so
+password    required        pam_warn.so
+password    required        pam_deny.so
+session     required        pam_warn.so
+session     required        pam_deny.so
+
+# End /etc/pam.d/other
+EOF
+        popd
+        pushd shadow/
+            sed -i 's@DICTPATH.*@DICTPATH\t/lib/cracklib/pw_dict@' etc/login.defs
+            sed -i 's/groups$(EXEEXT) //' src/Makefile.in          &&
+
+            find man -name Makefile.in -exec sed -i 's/groups\.1 / /'   {} \; &&
+            find man -name Makefile.in -exec sed -i 's/getspnam\.3 / /' {} \; &&
+            find man -name Makefile.in -exec sed -i 's/passwd\.5 / /'   {} \; &&
+
+            sed -e 's@#ENCRYPT_METHOD DES@ENCRYPT_METHOD YESCRYPT@' \
+                -e 's@/var/spool/mail@/var/mail@'                   \
+                -e '/PATH=/{s@/sbin:@@;s@/bin:@@}'                  \
+                -i etc/login.defs                                   &&
+
+            ./configure --sysconfdir=/etc   \
+                        --disable-static    \
+                        --without-libbsd    \
+                        --with-{b,yes}crypt &&
+            make
+            make exec_prefix=/usr pamddir= install
+            install -v -m644 /etc/login.defs /etc/login.defs.orig &&
+            for FUNCTION in FAIL_DELAY               \
+                            FAILLOG_ENAB             \
+                            LASTLOG_ENAB             \
+                            MAIL_CHECK_ENAB          \
+                            OBSCURE_CHECKS_ENAB      \
+                            PORTTIME_CHECKS_ENAB     \
+                            QUOTAS_ENAB              \
+                            CONSOLE MOTD_FILE        \
+                            FTMP_FILE NOLOGINS_FILE  \
+                            ENV_HZ PASS_MIN_LEN      \
+                            SU_WHEEL_ONLY            \
+                            CRACKLIB_DICTPATH        \
+                            PASS_CHANGE_TRIES        \
+                            PASS_ALWAYS_WARN         \
+                            CHFN_AUTH ENCRYPT_METHOD \
+                            ENVIRON_FILE
+            do
+                sed -i "s/^${FUNCTION}/# &/" /etc/login.defs
+            done
+            cat > /etc/pam.d/login << "EOF"
+# Begin /etc/pam.d/login
+
+# Set failure delay before next prompt to 3 seconds
+auth      optional    pam_faildelay.so  delay=3000000
+
+# Check to make sure that the user is allowed to login
+auth      requisite   pam_nologin.so
+
+# Check to make sure that root is allowed to login
+# Disabled by default. You will need to create /etc/securetty
+# file for this module to function. See man 5 securetty.
+#auth      required    pam_securetty.so
+
+# Additional group memberships - disabled by default
+#auth      optional    pam_group.so
+
+# include system auth settings
+auth      include     system-auth
+
+# check access for the user
+account   required    pam_access.so
+
+# include system account settings
+account   include     system-account
+
+# Set default environment variables for the user
+session   required    pam_env.so
+
+# Set resource limits for the user
+session   required    pam_limits.so
+
+# Display the message of the day - Disabled by default
+#session   optional    pam_motd.so
+
+# Check user's mail - Disabled by default
+#session   optional    pam_mail.so      standard quiet
+
+# include system session and password settings
+session   include     system-session
+password  include     system-password
+
+# End /etc/pam.d/login
+EOF
+            cat > /etc/pam.d/passwd << "EOF"
+# Begin /etc/pam.d/passwd
+
+password  include     system-password
+
+# End /etc/pam.d/passwd
+EOF
+            cat > /etc/pam.d/su << "EOF"
+# Begin /etc/pam.d/su
+
+# always allow root
+auth      sufficient  pam_rootok.so
+
+# Allow users in the wheel group to execute su without a password
+# disabled by default
+#auth      sufficient  pam_wheel.so trust use_uid
+
+# include system auth settings
+auth      include     system-auth
+
+# limit su to users in the wheel group
+# disabled by default
+#auth      required    pam_wheel.so use_uid
+
+# include system account settings
+account   include     system-account
+
+# Set default environment variables for the service user
+session   required    pam_env.so
+
+# include system session settings
+session   include     system-session
+
+# End /etc/pam.d/su
+EOF
+            cat > /etc/pam.d/chpasswd << "EOF"
+# Begin /etc/pam.d/chpasswd
+
+# always allow root
+auth      sufficient  pam_rootok.so
+
+# include system auth and account settings
+auth      include     system-auth
+account   include     system-account
+password  include     system-password
+
+# End /etc/pam.d/chpasswd
+EOF
+
+            sed -e s/chpasswd/newusers/ /etc/pam.d/chpasswd >/etc/pam.d/newusers
+            cat > /etc/pam.d/chage << "EOF"
+# Begin /etc/pam.d/chage
+
+# always allow root
+auth      sufficient  pam_rootok.so
+
+# include system auth and account settings
+auth      include     system-auth
+account   include     system-account
+
+# End /etc/pam.d/chage
+EOF
+            for PROGRAM in chfn chgpasswd chsh groupadd groupdel \
+                           groupmems groupmod useradd userdel usermod
+            do
+                install -v -m644 /etc/pam.d/chage /etc/pam.d/${PROGRAM}
+                sed -i "s/chage/$PROGRAM/" /etc/pam.d/${PROGRAM}
+            done
+            if [ -f /etc/login.access ]; then mv -v /etc/login.access{,.NOUSE}; fi
+            if [ -f /etc/limits ]; then mv -v /etc/limits{,.NOUSE}; fi
+        popd
+        pushd elfutils/
+            make -C libdwelf install
+            make -C libdwfl install
+        popd
+        pushd systemd/
+            sed -i -e 's/GROUP="render"/GROUP="video"/' \
+                -e 's/GROUP="sgx", //' rules.d/50-udev-default.rules.in
+            rm -r build
+            mkdir build &&
+            cd    build &&
+
+            meson setup ..                 \
+                  --prefix=/usr            \
+                  --buildtype=release      \
+                  -D default-dnssec=no     \
+                  -D firstboot=false       \
+                  -D install-tests=false   \
+                  -D ldconfig=false        \
+                  -D man=auto              \
+                  -D sysusers=false        \
+                  -D rpmmacrosdir=no       \
+                  -D homed=disabled        \
+                  -D userdb=false          \
+                  -D mode=release          \
+                  -D pam=enabled           \
+                  -D pamconfdir=/etc/pam.d \
+                  -D dev-kvm-mode=0660     \
+                  -D nobody-group=nogroup  \
+                  -D sysupdate=disabled    \
+                  -D ukify=disabled        \
+                  -D docdir=/usr/share/doc/systemd-256.4 &&
+
+            ninja
+            ninja install
+            grep 'pam_systemd' /etc/pam.d/system-session ||
+            cat >> /etc/pam.d/system-session << "EOF"
+# Begin Systemd addition
+
+session  required    pam_loginuid.so
+session  optional    pam_systemd.so
+
+# End Systemd addition
+EOF
+
+            cat > /etc/pam.d/systemd-user << "EOF"
+# Begin /etc/pam.d/systemd-user
+
+account  required    pam_access.so
+account  include     system-account
+
+session  required    pam_env.so
+session  required    pam_limits.so
+session  required    pam_loginuid.so
+session  optional    pam_keyinit.so force revoke
+session  optional    pam_systemd.so
+
+auth     required    pam_deny.so
+password required    pam_deny.so
+
+# End /etc/pam.d/systemd-user
+EOF
+            systemctl daemon-reexec
+        popd
         pushd polkit/
             groupadd -fg 27 polkitd &&
             useradd -c "PolicyKit Daemon Owner" -d /etc/polkit-1 -u 27 \
@@ -2023,10 +2314,38 @@ function eic.plus() {
             meson setup ..                   \
                   --prefix=/usr              \
                   --buildtype=release        \
-                  -D man=true                \
-                  -D session_tracking=logind \
-                  -D tests=true
-            
+                  -D session_tracking=logind
+            ninja
+            ninja install
+        popd
+        tar -xvf libndp-1.9.tar.gz
+        mv libndp-1.9 libndp
+        pushd libndp/
+            ./configure --prefix=/usr        \
+                        --sysconfdir=/etc    \
+                        --localstatedir=/var \
+                        --disable-static     &&
+            make
+            make install
+        popd
+        systemctl disable --now systemd-networkd
+        pushd NetworkManager
+            grep -rl '^#!.*python$' | xargs sed -i '1s/python/&3/'
+            CXXFLAGS+="-O2 -fPIC"             \
+            meson setup ..                    \
+                  --prefix=/usr               \
+                  --buildtype=release         \
+                  -D libaudit=no              \
+                  -D nmtui=true               \
+                  -D ovs=false                \
+                  -D ppp=false                \
+                  -D selinux=false            \
+                  -D qt=false                 \
+                  -D session_tracking=systemd \
+                  -D tests=no                 \
+                  -D modem_manager=false      &&
+            ninja
+        popd
     popd
 }
 
@@ -2175,7 +2494,35 @@ EOF
 }
 
 function eic.zypper.install() {
-	echo "Not implemented"
+	pushd /sources/
+        tar -xvf boost-1.86.0-b2-nodocs.tar.xz
+        mv boost-1.86.0 boost
+        pushd boost/
+            patch -Np1 -i ../boost-1.86.0-upstream_fixes-1.patch
+            case $(uname -m) in
+               i?86)
+                  sed -e "s/defined(__MINGW32__)/& || defined(__i386__)/" \
+                      -i ./libs/stacktrace/src/exception_headers.h ;;
+            esac
+            ./bootstrap.sh --prefix=/usr --with-python=python3 &&
+            ./b2 stage $MAKEFLAGS threading=multi link=shared
+            rm -rf /usr/lib/cmake/[Bb]oost*
+            ./b2 install threading=multi link=shared
+        popd
+        mv 1.14.81.tar.gz zypper-1.14.81.tar.gz
+        tar -xvf zypper-1.14.81.tar.gz
+        mv zypper-1.14.81 zypper
+        git clone https://github.com/openSUSE/libzypp
+        pushd libzypp/
+            git checkout tags/17.35.19
+            mkdir build
+            cd    build
+            cmake .. -D CMAKE_INSTALL_PREFIX:PATH=/usr ENABLE_BUILD_DOCS:BOOL=OFF
+            # not done
+        popd
+        mkdir build
+        cd    build
+    popd
 }
 
 function eic.signoff() {

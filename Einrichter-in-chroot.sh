@@ -1517,6 +1517,38 @@ cd    p11-build &&
                     > /etc/ssl/local/CAcert_Class_3_root.pem &&
             /usr/sbin/make-ca -r
         popd
+        pushd cpio/
+            ./configure --prefix=/usr \
+                        --enable-mt   \
+                        --with-rmt=/usr/libexec/rmt &&
+            make &&
+            makeinfo --html            -o doc/html      doc/cpio.texi &&
+            makeinfo --html --no-split -o doc/cpio.html doc/cpio.texi &&
+            makeinfo --plaintext       -o doc/cpio.txt  doc/cpio.texi
+            make install &&
+            install -v -m755 -d /usr/share/doc/cpio-2.15/html &&
+            install -v -m644    doc/html/* \
+                                /usr/share/doc/cpio-2.15/html &&
+            install -v -m644    doc/cpio.{html,txt} \
+                                /usr/share/doc/cpio-2.15
+        popd
+        pushd hwdata/
+            ./configure --prefix=/usr --disable-blacklist
+            make install
+        popd
+        pushd pciutils/
+            sed -r '/INSTALL/{/PCI_IDS|update-pciids /d; s/update-pciids.8//}' \
+                -i Makefile
+            make PREFIX=/usr                \
+                 SHAREDIR=/usr/share/hwdata \
+                 SHARED=yes
+            make PREFIX=/usr                \
+                 SHAREDIR=/usr/share/hwdata \
+                 SHARED=yes                 \
+                 install install-lib        &&
+
+            chmod -v 755 /usr/lib/libpci.so
+        popd
         cat > /usr/bin/which << "EOF"
 #!/bin/bash
 type -pa "$@" | head -n 1 ; exit ${PIPESTATUS[0]}
@@ -1929,6 +1961,38 @@ function eic.plus() {
         mv slang-2.3.3 slang
         tar -xvf gpm-1.20.7.tar.bz2
         mv gpm-1.20.7 gpm
+        tar -xvf icu4c-76_1-src.tgz
+        tar -xvf libxml2-2.13.5.tar.xz
+        mv libxml2-2.13.5 libxml2
+        tar -xvf libxslt-1.1.42.tar.xz
+        mv libxslt-1.1.42 libxslt
+        pushd icu/
+            cd source                 &&
+
+            ./configure --prefix=/usr &&
+            make
+            make install
+        popd
+        pushd libxml2/
+            ./configure --prefix=/usr           \
+                        --sysconfdir=/etc       \
+                        --disable-static        \
+                        --with-history          \
+                        --with-icu              \
+                        PYTHON=/usr/bin/python3 \
+                        --docdir=/usr/share/doc/libxml2-2.13.5 &&
+            make
+            make install
+            rm -vf /usr/lib/libxml2.la &&
+            sed '/libs=/s/xml2.*/xml2"/' -i /usr/bin/xml2-config
+        popd
+        pushd libxslt/
+            ./configure --prefix=/usr                          \
+                        --disable-static                       \
+                        --docdir=/usr/share/doc/libxslt-1.1.42 &&
+            make
+            make install
+        popd
         pushd gpm/
             patch -Np1 -i ../gpm-1.20.7-consolidated-1.patch                &&
             ./autogen.sh                                                    &&
@@ -2330,6 +2394,7 @@ EOF
         popd
         systemctl disable --now systemd-networkd
         pushd NetworkManager
+            sed -i "s/option('libpsl', type: 'boolean', value: true, description: 'Link against libpsl')/option('libpsl', type: 'boolean', value: false, description: 'Link against libpsl')/g" meson_options.txt
             grep -rl '^#!.*python$' | xargs sed -i '1s/python/&3/'
             CXXFLAGS+="-O2 -fPIC"             \
             meson setup ..                    \
@@ -2343,7 +2408,8 @@ EOF
                   -D qt=false                 \
                   -D session_tracking=systemd \
                   -D tests=no                 \
-                  -D modem_manager=false      &&
+                  -D modem_manager=false      \
+                  -D crypto=null              &&
             ninja
         popd
     popd
@@ -2512,12 +2578,28 @@ function eic.zypper.install() {
         mv 1.14.81.tar.gz zypper-1.14.81.tar.gz
         tar -xvf zypper-1.14.81.tar.gz
         mv zypper-1.14.81 zypper
+        git clone https://github.com/jbeder/yaml-cpp.git
+        pushd yaml-cpp/
+            mkdir build && cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+            make -j$(nproc)
+            make install
+        popd
+        git clone https://github.com/openSUSE/libsolv.git
+        pushd libsolv/
+            mkdir build
+            cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr &&
+            make
+            make install
+        popd
         git clone https://github.com/openSUSE/libzypp
         pushd libzypp/
             git checkout tags/17.35.19
             mkdir build
             cd    build
-            cmake .. -D CMAKE_INSTALL_PREFIX:PATH=/usr ENABLE_BUILD_DOCS:BOOL=OFF
+            cmake .. -D CMAKE_INSTALL_PREFIX:PATH=/usr -D ENABLE_BUILD_DOCS:BOOL=OFF
+
             # not done
         popd
         mkdir build

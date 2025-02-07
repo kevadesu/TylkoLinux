@@ -452,6 +452,12 @@ function einrichter.xr() {
         mv make-ca-1.14 make-ca
         tar -xvf libtasn1-4.19.0.tar.gz
         mv libtasn1-4.19.0 libtasn1
+        tar -xvf cpio-2.15.tar.bz2
+        mv cpio-2.15 cpio
+        tar -xvf hwdata-0.385.tar.gz
+        mv hwdata-0.385 hwdata
+        tar -xvf pciutils-3.13.0.tar.gz
+        mv pciutils-3.13.0 pciutils
 }
 
 function einrichter.error() {

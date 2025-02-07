@@ -122,3 +122,9 @@ http://libndp.org/files/libndp-1.9.tar.gz
 https://github.com/openSUSE/zypper/archive/refs/tags/1.14.81.tar.gz
 https://www.linuxfromscratch.org/patches/blfs/12.2/boost-1.86.0-upstream_fixes-1.patch
 https://github.com/boostorg/boost/releases/download/boost-1.86.0/boost-1.86.0-b2-nodocs.tar.xz
+https://github.com/unicode-org/icu/releases/download/release-76-1/icu4c-76_1-src.tgz
+https://download.gnome.org/sources/libxml2/2.13/libxml2-2.13.5.tar.xz
+https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.42.tar.xz
+https://ftp.gnu.org/gnu/cpio/cpio-2.15.tar.bz2
+https://github.com/vcrhonek/hwdata/archive/v0.385/hwdata-0.385.tar.gz
+https://mj.ucw.cz/download/linux/pci/pciutils-3.13.0.tar.gz

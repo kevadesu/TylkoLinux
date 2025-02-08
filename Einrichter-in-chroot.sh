@@ -56,7 +56,7 @@ eic.config.systemd.disableScreenClearing <yes/no> - decide whether systemd shoul
 eic.config.systemd.limitCoreDumpSize <(Number)(G/M/K/B) - limits core dump size to value specified as argument
 eic.linux.install - the final boss: install the Linux kernel to the system. can take 0.4-32 SBUs (typically 2.5), MIGHT also be heavy
 eic.rpm.install - installs RPM
-eic.zypper.install - installs openSUSE's RPM frontend, Zypper
+eic.tdnf.install - installs VMware Photon's RPM frontend: TDNF (tiny dandified yum)
 eic.help - show this message
 "
 }
@@ -1551,6 +1551,37 @@ cd    p11-build &&
 
             chmod -v 755 /usr/lib/libpci.so
         popd
+        pushd libgpg-error/
+            ./configure --prefix=/usr &&
+            make
+            make install &&
+            install -v -m644 -D README /usr/share/doc/libgpg-error-1.50/README
+        popd
+        pushd libassaun/
+            ./configure --prefix=/usr &&
+            make                      &&
+
+            make -C doc html                                                       &&
+            makeinfo --html --no-split -o doc/assuan_nochunks.html doc/assuan.texi &&
+            makeinfo --plaintext       -o doc/assuan.txt           doc/assuan.texi
+            make install &&
+
+            install -v -dm755   /usr/share/doc/libassuan-3.0.1/html &&
+            install -v -m644 doc/assuan.html/* \
+                                /usr/share/doc/libassuan-3.0.1/html &&
+            install -v -m644 doc/assuan_nochunks.html \
+                                /usr/share/doc/libassuan-3.0.1      &&
+            install -v -m644 doc/assuan.{txt,texi} \
+                                /usr/share/doc/libassuan-3.0.1
+        popd
+        pushd gpgme/
+            mkdir build &&
+            cd    build &&
+
+            ../configure --prefix=/usr --disable-gpg-test &&
+            make PYTHONS=
+            make install PYTHONS=
+        popd
         cat > /usr/bin/which << "EOF"
 #!/bin/bash
 type -pa "$@" | head -n 1 ; exit ${PIPESTATUS[0]}
@@ -2594,7 +2625,7 @@ EOF
         popd
 		pushd /sources/rpm
 			./autogen.sh --noconfigure
-			./configure --prefix=/usr --enable-python
+			./configure --prefix=/usr --enable-python --enable-plugins --enable-shared --enable-static
 			make
 			make install
 		popd
@@ -2653,7 +2684,7 @@ function eic.zypper.install.DONOTUSE() {
     popd
 }
 
-function eic.dnf5.install() {
+function eic.dnf5.install.DONOTUSE() {
     pushd /sources/
         echo "Hi"
         tar -xvf boost-1.86.0-b2-nodocs.tar.xz
@@ -2722,7 +2753,7 @@ function eic.dnf5.install() {
     popd
 }
 
-function eic.dnf4.install() {
+function eic.dnf4.install.DONOTUSE() {
     pushd /sources/
         tar -xvf boost-1.86.0-b2-nodocs.tar.xz
         mv boost-1.86.0 boost
@@ -2788,6 +2819,27 @@ function eic.dnf4.install() {
                 make
                 make install
             popd
+        popd
+    popd
+}
+
+function eic.tdnf.install() {
+    pushd /sources/
+        git clone https://github.com/openSUSE/libsolv.git
+        pushd libsolv/
+            git checkout tags/0.7.31
+            mkdir build
+            cd build
+            cmake .. -DDISABLE_SHARED=OFF -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_RPMDB=ON -DENABLE_RPMMD=ON -DENABLE_RPMPKG=ON -DENABLE_APPDATA=ON &&
+            make &&
+            make install
+        popd
+        git clone https://github.com/kevadesu/tdnf
+        pushd tdnf/
+            git checkout stable-3.5
+            mkdir build && cd build
+            CFLAGS="-I/usr/include/rpm -I/usr/include/solv" LDFLAGS="-L/usr/lib -lsolv -lsolvext -lrpm" cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DRPM_INCLUDE_DIR=/usr/include/rpm -DRPM_LIBRARY=/usr/lib/librpm.so -DLIBSOLV_LIBRARY=/usr/lib/libsolv.so -DLIBSOLVEXT_LIBRARY=/usr/lib/libsolvext.so -DLIBSOLV_INCLUDE_DIR=/usr/include/solv -DDISABLE_SHARED=ON -DENABLE_STATIC=ON &&
+            make
         popd
     popd
 }

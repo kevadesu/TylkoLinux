@@ -458,6 +458,12 @@ function einrichter.xr() {
         mv hwdata-0.385 hwdata
         tar -xvf pciutils-3.13.0.tar.gz
         mv pciutils-3.13.0 pciutils
+        tar -xvf libgpg-error-1.50.tar.bz2
+        mv libgpg-error-1.50 libgpg-error
+        tar -xvf libassuan-3.0.1.tar.bz2
+        mv libassuan-3.0.1 libassaun
+        tar -xvf gpgme-1.23.2.tar.bz2
+        mv gpgme-1.23.2 gpgme
 }
 
 function einrichter.error() {

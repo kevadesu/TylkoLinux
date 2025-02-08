@@ -13,6 +13,8 @@ if [ ! -c /dev/null ]; then
     echo "/dev/null has been fixed."
 fi
 
+echo "PATH=/usr/bin:/usr/local/bin:/usr/sbin" > /etc/environment
+
 chmod 755 /bin/bash
 chown root:root /bin/bash
 
@@ -2392,7 +2394,15 @@ EOF
             make
             make install
         popd
-        systemctl disable --now systemd-networkd
+        read -p "[?] Disable systemd-networkd? [Y/N]" OPT
+        case "$OPT" in
+            y|Y|Yes|yes|YES)
+                systemctl disable --now systemd-networkd
+            ;;
+            *)
+                echo "[i] systemd-networkd will stay enabled."
+            ;;
+        esac
         pushd NetworkManager
             sed -i "s/option('libpsl', type: 'boolean', value: true, description: 'Link against libpsl')/option('libpsl', type: 'boolean', value: false, description: 'Link against libpsl')/g" meson_options.txt
             grep -rl '^#!.*python$' | xargs sed -i '1s/python/&3/'
@@ -2411,6 +2421,38 @@ EOF
                   -D modem_manager=false      \
                   -D crypto=null              &&
             ninja
+            ninja install &&
+            mv -v /usr/share/doc/NetworkManager{,-1.48.8}
+            for file in $(echo ../man/*.[1578]); do
+                section=${file##*.} &&
+                install -vdm 755 /usr/share/man/man$section
+                install -vm 644 $file /usr/share/man/man$section/
+            done
+            cp -Rv ../docs/{api,libnm} /usr/share/doc/NetworkManager-1.48.8
+            cat >> /etc/NetworkManager/NetworkManager.conf << "EOF"
+[main]
+plugins=keyfile
+EOF
+            cat > /etc/NetworkManager/conf.d/polkit.conf << "EOF"
+[main]
+auth-polkit=true
+EOF
+            cat > /etc/NetworkManager/conf.d/no-dns-update.conf << "EOF"
+[main]
+dns=none
+EOF
+            groupadd -fg 86 netdev &&
+            /usr/sbin/usermod -a -G netdev root
+
+            cat > /usr/share/polkit-1/rules.d/org.freedesktop.NetworkManager.rules << "EOF"
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("netdev")) {
+        return polkit.Result.YES;
+    }
+});
+EOF
+            systemctl enable NetworkManager
+            systemctl disable NetworkManager-wait-online
         popd
     popd
 }
@@ -2552,14 +2594,18 @@ EOF
         popd
 		pushd /sources/rpm
 			./autogen.sh --noconfigure
-			./configure --prefix=/usr
+			./configure --prefix=/usr --enable-python
 			make
 			make install
 		popd
+        install -d /var/lock/rpm
+        rpm --initdb --root=/
+        pip3 install rpm
 	popd
 }
 
-function eic.zypper.install() {
+# I truly hate Zypper. Don't use. I install a dep. It wants another. I install another, BUT IT ALWAYS FUCKING WANTS MORE DEPENDENCIES!!!
+function eic.zypper.install.DONOTUSE() {
 	pushd /sources/
         tar -xvf boost-1.86.0-b2-nodocs.tar.xz
         mv boost-1.86.0 boost
@@ -2598,12 +2644,151 @@ function eic.zypper.install() {
             git checkout tags/17.35.19
             mkdir build
             cd    build
-            cmake .. -D CMAKE_INSTALL_PREFIX:PATH=/usr -D ENABLE_BUILD_DOCS:BOOL=OFF
+            cmake .. -D CMAKE_INSTALL_PREFIX:PATH=/usr -D ENABLE_BUILD_DOCS:BOOL=OFF -DCMAKE_MODULE_PATH="/usr/share/cmake/Modules/"
 
             # not done
         popd
         mkdir build
         cd    build
+    popd
+}
+
+function eic.dnf5.install() {
+    pushd /sources/
+        echo "Hi"
+        tar -xvf boost-1.86.0-b2-nodocs.tar.xz
+        mv boost-1.86.0 boost
+        pushd boost/
+            patch -Np1 -i ../boost-1.86.0-upstream_fixes-1.patch
+            case $(uname -m) in
+               i?86)
+                  sed -e "s/defined(__MINGW32__)/& || defined(__i386__)/" \
+                      -i ./libs/stacktrace/src/exception_headers.h ;;
+            esac
+            ./bootstrap.sh --prefix=/usr --with-python=python3 &&
+            ./b2 stage $MAKEFLAGS threading=multi link=shared
+            rm -rf /usr/lib/cmake/[Bb]oost*
+            ./b2 install threading=multi link=shared
+        popd
+        mv 1.14.81.tar.gz zypper-1.14.81.tar.gz
+        tar -xvf zypper-1.14.81.tar.gz
+        mv zypper-1.14.81 zypper
+        git clone https://github.com/jbeder/yaml-cpp.git
+        pushd yaml-cpp/
+            mkdir build && cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+            make -j$(nproc)
+            make install
+        popd
+        git clone https://github.com/openSUSE/libsolv.git
+        pushd libsolv/
+            mkdir build
+            cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr &&
+            make
+            make install
+        popd
+        git clone https://github.com/rpm-software-management/dnf5
+        git clone https://github.com/ToruNiina/toml11
+        git clone https://github.com/fmtlib/fmt
+        git clone https://github.com/json-c/json-c
+        git clonr https://pagure.io/koji
+        pushd toml11/
+            git submodule update --init --recursive
+            cmake -B ./build/
+            cmake --build ./build/
+            cmake --install ./build/ --prefix /usr/
+        popd
+        pushd fmt/
+            cmake .. -DFMT_TEST=OFF
+            make
+            cmake --install . --prefix /usr/
+        popd
+        pushd json-c/
+            mkdir json-c-build
+            cd    json-c-build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+            make
+            make install
+        popd
+        pushd koji/
+            pip3 install -r requirements.txt
+        popd
+        pushd dnf/
+            mkdir build
+            cd    build
+            cmake .. -DWITH_TESTS=OFF -DCMAKE_INSTALL_PREFIX=/usr
+        popd
+    popd
+}
+
+function eic.dnf4.install() {
+    pushd /sources/
+        tar -xvf boost-1.86.0-b2-nodocs.tar.xz
+        mv boost-1.86.0 boost
+        pushd boost/
+            patch -Np1 -i ../boost-1.86.0-upstream_fixes-1.patch
+            case $(uname -m) in
+               i?86)
+                  sed -e "s/defined(__MINGW32__)/& || defined(__i386__)/" \
+                      -i ./libs/stacktrace/src/exception_headers.h ;;
+            esac
+            ./bootstrap.sh --prefix=/usr --with-python=python3 &&
+            ./b2 stage $MAKEFLAGS threading=multi link=shared
+            rm -rf /usr/lib/cmake/[Bb]oost*
+            ./b2 install threading=multi link=shared
+        popd
+        mv 1.14.81.tar.gz zypper-1.14.81.tar.gz
+        tar -xvf zypper-1.14.81.tar.gz
+        mv zypper-1.14.81 zypper
+        git clone https://github.com/jbeder/yaml-cpp.git
+        pushd yaml-cpp/
+            mkdir build && cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+            make -j$(nproc)
+            make install
+        popd
+        git clone https://github.com/openSUSE/libsolv.git
+        pushd libsolv/
+            mkdir build
+            cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr &&
+            make
+            make install
+        popd
+        cp -v /usr/share/cmake/Modules/FindLibSolv.cmake /usr/share/cmake-3.31/Modules/FindLibSolv.cmake
+        git clone https://github.com/rpm-software-management/librepo
+        git clone https://github.com/rpm-software-management/libdnf
+        git clone https://github.com/rpm-software-management/dnf
+        git clone https://github.com/rpm-software-management/modulemd-tools
+        pip3 install tito
+        pushd librepo/
+            mkdir build
+            cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_SELINUX=OFF -DUSE_GPGME=OFF -DWITH_ZCHUNK=OFF -DENABLE_DOCS=OFF -DENABLE_TESTS=OFF
+            make
+            make install
+        popd
+        pushd modulemd-tools/
+            git checkout tags/modulemd-tools-0.16-1
+            pip3 install argparse-manpage createrepo_c dnf koji pytest pyyaml setuptools wheel # Do not approve yet
+            tito build --rpm --install
+            pip3 install rpm-py-installer
+        popd
+        pushd libdnf/
+            mkdir build
+            pushd build/
+                cmake .. -DPYTHON_DESIRED="3" -DCMAKE_INSTALL_PREFIX:PATH=/usr/ -DWITH_GTKDOC=OFF -DWITH_HTML=OFF -DCMAKE_MODULE_PATH="/usr/share/cmake-3.31/Modules/" -DENABLE_RHSM_SUPPORT=OFF -DWITH_ZCHUNK=OFF
+            popd
+        popd
+        pushd dnf/
+            mkdir build
+            pushd build/
+                cmake .. -DPYTHON_DESIRED="3" -DCMAKE_INSTALL_PREFIX:PATH=/usr/ -DWITH_MAN=0
+                make
+                make install
+            popd
+        popd
     popd
 }
 

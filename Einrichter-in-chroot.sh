@@ -2632,6 +2632,7 @@ EOF
         install -d /var/lock/rpm
         rpm --initdb --root=/
         pip3 install rpm
+        mkdir /etc/yum.repos.d
 	popd
 }
 
@@ -2825,6 +2826,18 @@ function eic.dnf4.install.DONOTUSE() {
 
 function eic.tdnf.install() {
     pushd /sources/
+        echo "[?] Is RPM installed? Because if not, the packages will NOT install!"
+        read -p "[Y]es, it is. [N]o, it isn't." opt
+        case "$opt" in
+            Y|y|Yes|yes|YES)
+                echo "[i] Checking...."
+                rpm --version || eic.error RPM_NOT_INSTALLED
+            ;;
+            *)
+                echo "[i] Install RPM first, by running eic.rpm.install. The script will kick you out now. Rerun me!"
+                exit 1
+            ;;
+        esac
         git clone https://github.com/openSUSE/libsolv.git
         pushd libsolv/
             git checkout tags/0.7.31
@@ -2836,10 +2849,22 @@ function eic.tdnf.install() {
         popd
         git clone https://github.com/kevadesu/tdnf
         pushd tdnf/
-            git checkout stable-3.5
-            mkdir build && cd build
+            git checkout stable-3.5 &&
+            mkdir build
+            cd build
             CFLAGS="-I/usr/include/rpm -I/usr/include/solv" LDFLAGS="-L/usr/lib -lsolv -lsolvext -lrpm" cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DRPM_INCLUDE_DIR=/usr/include/rpm -DRPM_LIBRARY=/usr/lib/librpm.so -DLIBSOLV_LIBRARY=/usr/lib/libsolv.so -DLIBSOLVEXT_LIBRARY=/usr/lib/libsolvext.so -DLIBSOLV_INCLUDE_DIR=/usr/include/solv -DDISABLE_SHARED=ON -DENABLE_STATIC=ON &&
-            make
+            make &&
+            make install &&
+            cat > /etc/tdnf/tdnf.conf << EOF
+[main]
+gpgcheck=1
+installonly_limit=3
+clean_requirements_on_remove=0
+repodir=/etc/yum.repos.d
+cachedir=/var/cache/tdnf
+distroverpkg=os-release
+EOF
+
         popd
     popd
 }
@@ -2848,16 +2873,18 @@ function eic.signoff() {
     echo 12.2-systemd-tylux > /etc/lfs-release
     cat > /etc/lsb-release << "EOF"
 DISTRIB_ID="TylkoLinux"
-DISTRIB_RELEASE="25.01"
-DISTRIB_CODENAME="snyx"
-DISTRIB_DESCRIPTION="TylkoLinux Snyx"
+DISTRIB_RELEASE="25.02"
+DISTRIB_CODENAME="delirium"
+DISTRIB_DESCRIPTION="TylkoLinux Delirium"
 EOF
     cat > /etc/os-release << "EOF"
 NAME="TylkoLinux"
-VERSION="25.01"
+VERSION="25.02 (Delirium)"
+VERSION_ID="25.02"
 ID=tylux
-PRETTY_NAME="TylkoLinux 25.01 Snyx (LFS 12.2-systemd)"
-VERSION_CODENAME="snyx"
+PRETTY_NAME="TylkoLinux 25.02 Delirium (LFS 12.2-systemd)"
+ANSI_COLOR="0;35"
+VERSION_CODENAME="delirium"
 HOME_URL="https://github.com/kevadesu/TylkoLinux"
 EOF
 }
@@ -2867,6 +2894,10 @@ function eic.error() {
     case "$@" in
         D404_SRC)
             echo "[!] Directory /sources/ does NOT exist!"
+        ;;
+        RPM_NOT_INSTALLED)
+            echo "[!] RPM...is not installed."
+            exit 1
         ;;
         *)
             echo "[!] We were unable to determine the error."

@@ -1,0 +1,8 @@
+NAME="TylkoLinux"
+VERSION="25.02 (Delirium)"
+VERSION_ID="25.02"
+ID=tylux
+PRETTY_NAME="TylkoLinux 25.02 Delirium (LFS 12.2-systemd)"
+ANSI_COLOR="0;35"
+VERSION_CODENAME="delirium"
+HOME_URL="https://github.com/kevadesu/TylkoLinux"

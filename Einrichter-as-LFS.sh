@@ -54,15 +54,15 @@ main() {
 function eal.setup.env() {
     echo "The installer is about to begin setting up the environment. Please wait..."
     sleep 2
-
+    read -p "[i] Specify the path to the target LFS installation: " LFS
     cat > ~/.bash_profile << "EOF"
 exec env -i HOME=$HOME TERM=$TERM PS1='\u:\w\$ ' /bin/bash
 EOF
 
-    cat > ~/.bashrc << "EOF"
+    echo -e "
 set +h
 umask 022
-LFS=/mnt/lfs
+LFS=${LFS}
 LC_ALL=POSIX
 LFS_TGT=$(uname -m)-lfs-linux-gnu
 PATH=/usr/bin
@@ -71,9 +71,9 @@ PATH=$LFS/tools/bin:$PATH
 CONFIG_SITE=$LFS/usr/share/config.site
 MAKEFLAGS=-j$(nproc)
 export LFS LC_ALL LFS_TGT PATH CONFIG_SITE MAKEFLAGS 
-EOF
+" > ~/.bashrc
 
-source $HOME/.bash_profile
+    source $HOME/.bash_profile
 }
 
 function eal.notification.buildconf() {
@@ -120,6 +120,7 @@ function eal.install.cross-toolchain() {
     make
     eal.notification.installing
     make install
+    cd $LFS
     eal.notification.extracting
     pushd $LFS/sources/
         pushd $LFS/sources/gcc/
@@ -277,7 +278,7 @@ function eal.install.cross-toolchain() {
                -i $LFS/usr/include/curses.h
         popd
         EIR_PKG=bash
-        pushd $LFS/soruces/bash
+        pushd $LFS/sources/bash
             eal.notification.buildconf
             ./configure --prefix=/usr                      \
                         --build=$(sh support/config.guess)  \

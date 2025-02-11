@@ -166,6 +166,8 @@ function einrichter.installer.SafeUser() {
     echo -e "${BBlue}[i] ${Blue}Assign the lfs user a password.${Color_Off}"
     passwd lfs
     echo -e "${BBlue}[i] ${Blue}Granting the lfs user full access to all directories...${Color_Off}"
+    chown -v lfs $LFS
+    chown -vR lfs $LFS/sources
     chown -v lfs $LFS/{usr{,/*},lib,var,etc,bin,sbin,tools}
     case $(uname -m) in
         x86_64) chown -v lfs $LFS/lib64 ;;
@@ -185,6 +187,7 @@ function einrichter.installer.SafeUser() {
     esac
     echo -e "${BBlue}[i] ${Blue}Attempting login as lfs...${Color_Off}"
     echo -e "${BBlue}[i] ${Blue}You are about to switch to the LFS user. When you log in, run the Einrichter-as-LFS.sh script located in your home directory by typing \"./Einrichter-as-LFS.sh\".${Color_Off}"
+    echo -e "${BBlue}[i] ${Blue}From here on, you no longer need the installer to log in to the lfs user. In the future, just run \"su - lfs\", either in Einrichter or in shell. Only run this again if you want to re-own everything under the lfs user.${Color_Off}"
     su - lfs
     einrichter.installer.SafeUser.End
 }

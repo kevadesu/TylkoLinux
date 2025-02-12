@@ -31,6 +31,7 @@ einrichter.help - Show this help dialog
 einrichter.backup.create - Create a backup of the system to the home folder
 einrichter.backup.restore - Restore the aforementioned backup
 einrichter.xr - Extracts everything in $LFS/sources/ and renames them to the same package name without the version number
+einrichter.add.fs - Adds the required stuff aswell
 exit - Exit the script
 For more information, see https://github.com/kevadesu/TylkoLinux"
 }
@@ -467,6 +468,10 @@ function einrichter.xr() {
         mv libassuan-3.0.1 libassaun
         tar -xvf gpgme-1.23.2.tar.bz2
         mv gpgme-1.23.2 gpgme
+}
+
+function einrichter.add.fs() {
+    cp -vR $SCRIPT_DIR/add/fs/* $LFS/
 }
 
 function einrichter.error() {

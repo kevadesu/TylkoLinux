@@ -32,6 +32,7 @@ eic.dirs.create - set up directories
 eic.essentials.create - set up essentials
 eic.essentials.install - install essential tools
 eic.clean - clean up environment
+eic.bugfix.RrX - runs bugfix RrX which extracts the packages again
 eic.system.build - build the system
 eic.system.build.gcc - build GCC. this has been put in a separate function because building GCC alone takes 46 SBU.
 eic.system.build.continue - continue building the system after successfully building GCC
@@ -44,9 +45,9 @@ eic.config.network.systemd.resolve <on/off/enable/disable> - enables/disables sy
 eic.config.network.hostname <hostname> - writes hostname to /etc/hostname
 eic.config.network.staticresolver - use static /etc/resolv.conf configuration after disabling systemd-resolved
 eic.config.time.createAdj - adjust /etc/adjtime to local time if hardware clock is set to that
-eic.config.time.clarifyUTC - tell systemd-timedated your hardware clock is set to UTC/Local Time
-eic.config.time.set - enter the time to set in YYYY-MM-DD HH:MM:SS format
-eic.config.time.tz <timezone> - set a timezone. use command 'timedatectl list-timezones' to get a list of all timezones
+eic.config.time.clarifyUTC - tell systemd-timedated your hardware clock is set to UTC/Local Time (only works when booted)
+eic.config.time.set - enter the time to set in YYYY-MM-DD HH:MM:SS format (only works when booted)
+eic.config.time.tz <timezone> - set a timezone. use command 'timedatectl list-timezones' to get a list of all timezones (only works when booted)
 eic.config.time.nts <on/off/enable/disable> - switch systemd's Network Time Synchronisation on or off
 eic.config.console.preset - wipe /etc/vconsole.conf and simply write 'FONT=Lat2-Terminus16' to it
 eic.config.console.keymap <KEYMAP> - write default keymap to /etc/vconsole.conf
@@ -1829,7 +1830,7 @@ function eic.config.console.preset() {
 }
 
 function eic.config.console.keymap() {
-	echo "KEYMAP=$*" >> /etc/vconsole.conf
+	echo "KEYMAP=$1" >> /etc/vconsole.conf
 }
 
 function eic.config.locale.set() {
@@ -1928,29 +1929,28 @@ function eic.config.systemd.disableScreenClearing() {
 [Service]
 TTYVTDisallocate=no
 EOF
-			;;
-			no|NO|No)
-				rm /etc/systemd/system/getty@tty1.service.d/noclear.conf
-			;;
-			*)
-				echo "[!] Unrecognised (or empty) argument."
-				echo "[i] Syntax: eic.config.systemd.disableScreenClearing (yes/no)"
-			;;
+		;;
+		no|NO|No)
+			rm /etc/systemd/system/getty@tty1.service.d/noclear.conf
+		;;
+		*)
+			echo "[!] Unrecognised (or empty) argument."
+			echo "[i] Syntax: eic.config.systemd.disableScreenClearing (yes/no)"
+		;;
 	esac
 }
 
 function eic.config.systemd.limitCoreDumpSize() {
 		mkdir -pv /etc/systemd/coredump.conf.d || echo "[i] Great, the directory already exists!"
-		echo -e "
-[Coredump]
-MaxUse=$*" > /etc/systemd/coredump.conf.d/maxuse.conf
+		echo -e "[Coredump]
+MaxUse=$1" > /etc/systemd/coredump.conf.d/maxuse.conf
 }
 
 function eic.linux.install() {
     pushd /sources/linux/
         read -p "[i] In this section, it is recommended to have the TylkoLinux build/installation guide open and ready. [ENTER]"
         make mrproper
-        make menuconfig
+        # make menuconfig
         make
         make modules_install
 		read -p "[i] Mount boot partition? <Y/N>: " OPT
@@ -2633,6 +2633,17 @@ EOF
         rpm --initdb --root=/
         pip3 install rpm
         mkdir /etc/yum.repos.d
+        mkdir /sources-rpm/
+        pushd /sources-rpm/
+            wget https://repo.rootsource.cc/pub/TylkoLinux/25.2/os/pkgs/t/tylux-release-25.2-25.2.noarch.rpm
+            rpm -vv -i ./tylux-release-25.2-25.2.noarch.rpm
+        popd
+        cat > /etc/yum.repos.d/tylux25d2.repo << 'EOF'
+[rscc]
+name=TylkoLinux 25.2 updates
+baseurl=https://repo.rootsource.cc/pub/TylkoLinux/25.2/os/pkgs/
+enabled=1
+EOF
 	popd
 }
 
@@ -2862,12 +2873,28 @@ installonly_limit=3
 clean_requirements_on_remove=0
 repodir=/etc/yum.repos.d
 cachedir=/var/cache/tdnf
-distroverpkg=os-release
+distroverpkg=tylux-release
 EOF
-
         popd
     popd
 }
+
+function eic.bugfix.RrX() {
+    pushd /sources/
+        echo "[i] Applying bugfix RrX..."
+        echo "[i] Removing the following directories: /sources/: gettext/ grep/ bash/ diffutils/ findutils/ patch/"
+        rm -rv gettext grep bash diffutils findutils patch
+        echo "[i] Extracting and renaming..."
+        tar -xvf bash*z grep*z gettext*z diffutils*z findutils*z patch*z
+        mv -v bash-5.2.32 bash
+        mv -v grep-3.11 grep
+        mv -v gettext-0.22.5 gettext
+        mv -v diffutils-3.10 diffutils
+        mv -v findutils-4.10.0.tar.xz findutils
+        mv -v patch-2.7.6 patch
+    popd
+}
+
 
 function eic.signoff() {
     echo 12.2-systemd-tylux > /etc/lfs-release
@@ -2885,7 +2912,7 @@ ID=tylux
 PRETTY_NAME="TylkoLinux 25.02 Delirium (LFS 12.2-systemd)"
 ANSI_COLOR="0;35"
 VERSION_CODENAME="delirium"
-HOME_URL="https://github.com/kevadesu/TylkoLinux"
+HOME_URL="https://distrolabs.github.io/"
 EOF
 }
 

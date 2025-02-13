@@ -117,8 +117,9 @@ function einrichter.installer.pkgs() {
     mkdir $LFS/sources
     echo -e "${BPurple}[1/6] Downloading package list..."
     wget https://www.linuxfromscratch.org/lfs/view/stable-systemd/wget-list-systemd --continue --directory-prefix=$LFS/sources    
-    echo -e "[2/6] Downloading checksum of packages"
-    wget $SCRIPT_DIR/md5sums --continue --directory-prefix=$LFS/sources
+    echo -e "[2/6] Copying md5sums to $LFS/sources/ (It's already been downloaded)"
+    cp $SCRIPT_DIR/md5sums $LFS/sources/
+    # wget $SCRIPT_DIR/md5sums --continue --directory-prefix=$LFS/sources
     echo -e "[3/6] Download packages..."
     wget --input-file=$SCRIPT_DIR/wget-list-systemd --continue --directory-prefix=$LFS/sources
     echo -e "[4/6] Verifying packages..."
@@ -126,6 +127,7 @@ function einrichter.installer.pkgs() {
         function einrichter.installer.pkgs.verify() {
             md5sum -c $LFS/sources/md5sums || einrichter.error PKG_VER_ERR
         }
+        einrichter.installer.pkgs.verify
     popd
     echo -e "[5/6] Downloading patches..."
     mkdir $LFS/sources/patches
@@ -308,7 +310,7 @@ function einrichter.xr() {
         tar -xvf bash-5.2.32.tar.gz
         mv bash-5.2.32 bash
         tar -xvf findutils-4.10.0.tar.xz
-        mv findutils-4.10.0.tar.xz findutils
+        mv findutils-4.10.0 findutils
         tar -xvf gawk-5.3.0.tar.*z
         mv gawk-5.3.0 gawk
         tar -xvf grep-3.11.tar.*z

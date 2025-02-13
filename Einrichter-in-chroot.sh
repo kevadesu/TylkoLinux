@@ -31,6 +31,7 @@ function eic.help() {
 eic.dirs.create - set up directories
 eic.essentials.create - set up essentials
 eic.essentials.install - install essential tools
+eic.essentials.verify - verify installation
 eic.clean - clean up environment
 eic.bugfix.RrX - runs bugfix RrX which extracts the packages again
 eic.system.build - build the system
@@ -210,6 +211,15 @@ function eic.essentials.install() {
             make install
         popd
     popd
+}
+
+function eic.essentials.verify() {
+    ver_check Gettext        gettext  0.22.5
+    ver_check Bison          bison    3.8.2
+    ver_check Perl           perl     5.40.0
+    ver_check Python         python3  3.12.5
+    ver_check Texinfo        info     7.1
+    ver_check Util-linux     cal      2.40.2
 }
 
 function eic.clean() {
@@ -2885,12 +2895,17 @@ function eic.bugfix.RrX() {
         echo "[i] Removing the following directories: /sources/: gettext/ grep/ bash/ diffutils/ findutils/ patch/"
         rm -rv gettext grep bash diffutils findutils patch
         echo "[i] Extracting and renaming..."
-        tar -xvf bash*z grep*z gettext*z diffutils*z findutils*z patch*z
+        tar -xvf bash*z 
+        tar -xvf grep*z 
+        tar -xvf gettext*z 
+        tar -xvf diffutils*z 
+        tar -xvf findutils*z 
+        tar -xvf patch*z
         mv -v bash-5.2.32 bash
         mv -v grep-3.11 grep
         mv -v gettext-0.22.5 gettext
         mv -v diffutils-3.10 diffutils
-        mv -v findutils-4.10.0.tar.xz findutils
+        mv -v findutils-4.10.0 findutils
         mv -v patch-2.7.6 patch
     popd
 }
@@ -2931,5 +2946,27 @@ function eic.error() {
         ;;
     esac
 }
+
+# Those are functions taken from the compatibility checker script created in LFS 12.2-systemd. Shoutout to them!
+
+
+
+ver_check()
+{
+   if ! type -p $2 &>/dev/null
+   then 
+     echo -e "${BRed}ERROR ${Color_Off}| Cannot find $2 ($1)"; return 1; 
+   fi
+   v=$($2 --version 2>&1 | grep -E -o '[0-9]+\.[0-9\.]+[a-z]*' | head -n1)
+   if printf '%s\n' "$3" "$v" | sort --version-sort --check &>/dev/null
+   then 
+     printf "${BGreen}OK    ${Color_Off}| %-9s %-6s >= $3\n" "$1" "$v"; return 0;
+   else 
+     printf "${BRed}ERROR ${Color_Off}| %-9s is TOO OLD ($3 or later required)\n" "$1"; 
+     return 1; 
+   fi
+}
+
+bail() { echo -e "${BRed}FATAL ${Color_Off}| $1"; exit 1; }
 
 main

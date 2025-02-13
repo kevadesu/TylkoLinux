@@ -1,7 +1,7 @@
 #!/bin/bash
 
 main() {
-    echo "Einrichter is designed to work as an install script where you can resume where you left off. Do NOT skip anything if you have not ran the step yet."
+    echo "Einrichter is designed to work as an install script where you can resume where you left off. Do NOT skip anything if you have not ran the step yet. Type R to run, S to skip and Q to quit."
     read -p "Pending step: Setting up environment. Run, skip or quit?" OPT
     case "$OPT" in
         R)
@@ -36,6 +36,21 @@ main() {
     case "$OPT" in
         R)
             eal.install.cross-toolchain
+            ;;
+        S)
+            echo "Step skipped."
+            ;;
+        Q)
+            exit
+            ;;
+        *)
+            echo "Unknown command. Repeating questions."
+            ;;
+    esac
+    read -p "Pending step: Verifying installation. Run, skip or quit?" OPT
+    case "$OPT" in
+        R)
+            eal.install.verify
             ;;
         S)
             echo "Step skipped."
@@ -375,14 +390,15 @@ function eal.install.cross-toolchain() {
             make DESTDIR=$LFS install
         popd
         # From here on I got lazy with the script to get it over with Chapter 6 faster, I'll fix all of this when TylkoLinux is in last Beta stage
-        pushd sed
+        # Update: DON'T GET LAZY WITH THE SCRIPT!!! SPECIFY THE FULL FUCKING DIRECTORY NAME!!! THIS FUCKING CREATED COMMAND NOT FOUND ERRORS
+        pushd $LFS/sources/sed
             ./configure --prefix=/usr   \
                         --host=$LFS_TGT  \
                         --build=$(./build-aux/config.guess)
             make
             make DESTDIR=$LFS install
         popd
-        pushd tar
+        pushd $LFS/sources/tar
             ./configure --prefix=/usr                     \
                         --host=$LFS_TGT                    \
                         --build=$(build-aux/config.guess) 
@@ -459,7 +475,45 @@ function eal.install.cross-toolchain() {
         popd
     popd
     echo "Cross-Toolchain installation has completed."
-}           
+}
 
+function eal.install.verify() {
+    ver_check Binutils       $LFS/bin/ld          2.43.1
+    ver_check GCC            $LGS/bin/gcc         14.2.0
+    ver_check Glibc          $LFS/bin/ldd         2.40
+    ver_check M4             $LFS/bin/m4          1.4.19
+    ver_check Ncurses        $LFS/bin/ncurses     6.5
+    ver_check Bash           $LFS/bin/bash        5.2.32
+    ver_check Coreutils      $LFS/bin/touch       9.5
+    ver_check Diffutils      $LFS/bin/cmp         3.10
+    ver_check File           $LFS/bin/file        5.45
+    ver_check Findutils      $LFS/bin/find        4.10.0
+    ver_check Gawk           $LFS/bin/gawk        5.3.0
+    ver_check Grep           $LFS/bin/grep        3.11
+    ver_check Gzip           $LFS/bin/gzip        1.13
+    ver_check Make           $LFS/bin/make        4.4.1
+    ver_check Patch          $LFS/bin/patch       2.7.6
+    ver_check Sed            $LFS/bin/sed         4.9
+    ver_check Tar            $LFS/bin/tar         1.35
+    ver_check Xz             $LFS/bin/xz          5.6.2
+}
+
+ver_check()
+{
+   if ! type -p $2 &>/dev/null
+   then 
+     echo -e "${BRed}ERROR ${Color_Off}| Cannot find $2 ($1)"; return 1; 
+   fi
+   v=$($2 --version 2>&1 | grep -E -o '[0-9]+\.[0-9\.]+[a-z]*' | head -n1)
+   if printf '%s\n' "$3" "$v" | sort --version-sort --check &>/dev/null
+   then 
+     printf "${BGreen}OK    ${Color_Off}| %-9s %-6s >= $3\n" "$1" "$v"; return 0;
+   else 
+     printf "${BRed}ERROR ${Color_Off}| %-9s is TOO OLD ($3 or later required)\n" "$1"; 
+     return 1; 
+   fi
+}
+
+bail() { echo -e "${BRed}FATAL ${Color_Off}| $1"; exit 1; }
 
 main

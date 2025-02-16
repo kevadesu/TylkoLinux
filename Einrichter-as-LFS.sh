@@ -205,7 +205,7 @@ function eal.install.cross-toolchain() {
                 --prefix=/usr                       \
                 --host=$LFS_TGT                      \
                 --build=$(../scripts/config.guess)    \
-                --enable-kernel=4.19                   \
+                --enable-kernel=5.4                    \
                 --with-headers=$LFS/usr/include         \
                 --disable-nscd                           \
                 libc_cv_slibdir=/usr/lib
@@ -232,6 +232,7 @@ function eal.install.cross-toolchain() {
                     echo "OK"
                 ;;
             esac
+            rm -v a.out
         popd
         pushd $LFS/sources/gcc/
             mkdir -v build-libstdcpp
@@ -478,24 +479,24 @@ function eal.install.cross-toolchain() {
 }
 
 function eal.install.verify() {
-    ver_check Binutils       $LFS/bin/ld          2.43.1
-    ver_check GCC            $LGS/bin/gcc         14.2.0
-    ver_check Glibc          $LFS/bin/ldd         2.40
-    ver_check M4             $LFS/bin/m4          1.4.19
-    ver_check Ncurses        $LFS/bin/ncurses     6.5
-    ver_check Bash           $LFS/bin/bash        5.2.32
-    ver_check Coreutils      $LFS/bin/touch       9.5
-    ver_check Diffutils      $LFS/bin/cmp         3.10
-    ver_check File           $LFS/bin/file        5.45
-    ver_check Findutils      $LFS/bin/find        4.10.0
-    ver_check Gawk           $LFS/bin/gawk        5.3.0
-    ver_check Grep           $LFS/bin/grep        3.11
-    ver_check Gzip           $LFS/bin/gzip        1.13
-    ver_check Make           $LFS/bin/make        4.4.1
-    ver_check Patch          $LFS/bin/patch       2.7.6
-    ver_check Sed            $LFS/bin/sed         4.9
-    ver_check Tar            $LFS/bin/tar         1.35
-    ver_check Xz             $LFS/bin/xz          5.6.2
+    ver_check Binutils       $LFS/bin/ld                   2.43.1
+    ver_check GCC            $LGS/bin/gcc                  14.2.0
+    ver_check Glibc          $LFS/bin/ldd                  2.40
+    ver_check M4             $LFS/bin/m4                   1.4.19
+    ver_check Ncurses        $LFS/bin/ncursesw6-config     6.5
+    ver_check Bash           $LFS/bin/bash                 5.2.32
+    ver_check Coreutils      $LFS/bin/touch                9.5
+    ver_check Diffutils      $LFS/bin/cmp                  3.10
+    ver_check File           $LFS/bin/file                 5.45
+    ver_check Findutils      $LFS/bin/find                 4.10.0
+    ver_check Gawk           $LFS/bin/gawk                 5.3.0
+    ver_check Grep           $LFS/bin/grep                 3.11
+    ver_check Gzip           $LFS/bin/gzip                 1.13
+    ver_check Make           $LFS/bin/make                 4.4.1
+    ver_check Patch          $LFS/bin/patch                2.7.6
+    ver_check Sed            $LFS/bin/sed                  4.9
+    ver_check Tar            $LFS/bin/tar                  1.35
+    ver_check Xz             $LFS/bin/xz                   5.6.2
 }
 
 ver_check()

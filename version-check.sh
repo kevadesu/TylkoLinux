@@ -61,7 +61,7 @@ ver_check Sed            sed      4.1.5
 ver_check Tar            tar      1.22
 ver_check Texinfo        texi2any 5.0
 ver_check Xz             xz       5.0.0
-ver_kernel 4.19
+ver_kernel 5.4
 
 if mount | grep -q 'devpts on /dev/pts' && [ -e /dev/ptmx ]
 then echo "OK:    Linux Kernel supports UNIX 98 PTY";

@@ -926,11 +926,11 @@ EOF
         pushd expat/
             ./configure --prefix=/usr    \
                         --disable-static  \
-                        --docdir=/usr/share/doc/expat-2.6.2
+                        --docdir=/usr/share/doc/expat-2.6.4
             make
             make check
             make install
-            install -v -m644 doc/*.{html,css} /usr/share/doc/expat-2.6.2
+            install -v -m644 doc/*.{html,css} /usr/share/doc/expat-2.6.4
         popd
         pushd inetutils/
             sed -i 's/def HAVE_TERMCAP_TGETENT/ 1/' telnet/telnet.c

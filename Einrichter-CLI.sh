@@ -5,12 +5,14 @@ exit
 fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-EINRICHTER_VER=0.1.0
+EINRICHTER_VER=0.3.0
 
 function booter() {
     einrichter.colours
     echo "Einrichter - TylkoLinux Installer Shell $EINRICHTER_VER
 The script is located at $SCRIPT_DIR
+The LFS installation is located at $LFS
+The specified command line arguments are $*
 Run einrichter.help for commands"
 	main
 }
@@ -113,12 +115,14 @@ function einrichter.colours() {
 }
 
 function einrichter.installer.pkgs() {
+    echo "args: w\$$*"
     echo -e "[i] Preparing TylkoLinux for installation..."
     mkdir $LFS/sources
-    echo -e "${BPurple}[1/6] Downloading package list..."
-    wget https://www.linuxfromscratch.org/lfs/view/stable-systemd/wget-list-systemd --continue --directory-prefix=$LFS/sources    
+    echo -e "${BPurple}[1/6] Downloading package list... (already downloaded)"
+    # wget https://www.linuxfromscratch.org/lfs/view/stable-systemd/wget-list-systemd --continue --directory-prefix=$LFS/sources    
     echo -e "[2/6] Copying md5sums to $LFS/sources/ (It's already been downloaded)"
-    cp $SCRIPT_DIR/md5sums $LFS/sources/
+    cp -v $SCRIPT_DIR/md5sums $LFS/sources/
+    cp -v $SCRIPT_DIR/lfs-patch-list-checksum $LFS/sources
     # wget $SCRIPT_DIR/md5sums --continue --directory-prefix=$LFS/sources
     echo -e "[3/6] Download packages..."
     wget --input-file=$SCRIPT_DIR/wget-list-systemd --continue --directory-prefix=$LFS/sources
@@ -127,17 +131,31 @@ function einrichter.installer.pkgs() {
         function einrichter.installer.pkgs.verify() {
             md5sum -c $LFS/sources/md5sums || einrichter.error PKG_VER_ERR
         }
-        einrichter.installer.pkgs.verify
+        case $* in
+            *"--skip-verify"*)
+                echo -e "${BYellow}[!]${Yellow} You ran this command with --skip-verify, meaning that any verification will be skipped. Make sure you only enable this if you know what you're doing.${Color_Off}"
+            ;;
+            *)
+                einrichter.installer.pkgs.verify || einrichter.installer.fail
+            ;;
+        esac
     popd
     echo -e "[5/6] Downloading patches..."
     mkdir $LFS/sources/patches
-    wget --input-file=lfs-patch-list --continue --directory-prefix=$LFS/sources/patches
+    wget --input-file=$SCRIPT_DIR/lfs-patch-list --continue --directory-prefix=$LFS/sources/patches
     echo -e "[6/6] Verifying patches..."
     pushd $LFS/sources/patches
         function einrichter.installer.pkgs.verify.patches() {
-            md5sum -c $SCRIPT_DIR/lfs-patch-list-checksum || FAILURE_CODE=ec12737
+            md5sum -c $LFS/sources/lfs-patch-list-checksum || FAILURE_CODE=ec12737
         }
-        einrichter.installer.pkgs.verify.patches || einrichter.installer.fail
+        case $* in
+            *"--skip-verify"*)
+                echo -e "${BYellow}[!]${Yellow} You ran this command with --skip-verify, meaning that any verification will be skipped. Make sure you only enable this if you know what you're doing.${Color_Off}"
+            ;;
+            *)
+                einrichter.installer.pkgs.verify.patches || einrichter.installer.fail
+            ;;
+        esac
     popd
     echo -e "[i] Finished section installer.pkgs"
 }
@@ -201,14 +219,21 @@ function einrichter.installer.SafeUser.End() {
 }
 
 function einrichter.installer.chroot() {
-    chown --from lfs -R root:root $LFS/{usr,lib,var,etc,bin,sbin,tools}
-    case $(uname -m) in
-        x86_64) chown --from lfs -R root:root $LFS/lib64 ;;
+    case $@ in
+        *"--noperm"*)
+            echo -e "${BBlue}[i] ${Blue}Not changing permissions."
+        ;;
+        *)
+            chown --from lfs -Rv root:root $LFS/{usr,lib,var,etc,bin,sbin,tools} || einrichter.error TEST_FAIL
+            case $(uname -m) in
+                x86_64) chown --from lfs -Rv root:root $LFS/lib64 || einrichter.error TEST_FAIL ;;
+            esac
+            echo -e "${BBlue}[i] ${Blue}Copying third installer to the root of ${LFS}...${Color_Off}"
+            cp $SCRIPT_DIR/Einrichter-in-chroot.sh $LFS/
+            echo -e "${BBlue}[i] ${Blue}Making the installer executable...${Color_Off}"
+            chmod +x $LFS/Einrichter-in-chroot.sh
+        ;;
     esac
-    echo -e "${BBlue}[i] ${Blue}Copying third installer to the root of ${LFS}...${Color_Off}"
-    cp $SCRIPT_DIR/Einrichter-in-chroot.sh $LFS/
-    echo -e "${BBlue}[i] ${Blue}Making the installer executable...${Color_Off}"
-    chmod +x $LFS/Einrichter-in-chroot.sh
     echo -e "${BBlue}[i] ${Blue}Preparing the Virtual Kernel File Systems...${Color_Off}"
     mkdir -pv $LFS/{dev,proc,sys,run}
     mount -v --bind /dev $LFS/dev
@@ -388,8 +413,8 @@ function einrichter.xr() {
         mv gdbm-1.24 gdbm
         tar -xvf gperf-3.1.tar.gz; 
         mv gperf-3.1 gperf
-        tar -xvf expat-2.6.2.tar.xz; 
-        mv expat-2.6.2 expat
+        tar -xvf expat-2.6.4.tar.xz; 
+        mv expat-2.6.4 expat
         tar -xvf inetutils-2.5.tar.xz 
         mv inetutils-2.5 inetutils
         tar -xvf less-661.tar.gz; 
@@ -485,8 +510,12 @@ function einrichter.error() {
         "PKG_DWD_FAIL")
             echo -e "${BRed}[!] ${Red}Downloading packages, patches and/or the package list . This could be an issue on either your side of the Installer's. Please report this error to the github.com/kevadesu/TylkoLinux repository.${Color_Off}"
         ;;
-        D404_SRC)
-            echo "[!] Directory /sources/ does NOT exist!"
+        "D404_SRC")
+            echo "${BRed}[!] ${Red}Directory /sources/ does NOT exist!"
+        ;;
+        "TEST_FAIL")
+            echo "${BRed}[x] ${Red}KILLSWITCH INITIATING
+${BRed}[!] ${Red}Reason: Specified manually in code for testing purposes. This is not supposed to be used in the final edition of this installer."
         ;;
         *)
             echo -e "${BRed}[!] ${Red}The installation failed due to an unknown error.${Color_Off}"
@@ -495,4 +524,4 @@ function einrichter.error() {
     exit 1
 }
 
-booter
+booter "$@"

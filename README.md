@@ -1,3 +1,6 @@
+# :warning: Build is prone to fail, at least on Arch Linux.
+### Due to an unknown reason, the Einrichter-as-LFS.sh script is unable to actually properly install the libraries, resulting in a bunch of non-functioning commands. Please do not file any issues as I try to fix this....
+
 I FINISHED IT!
 
 Yes, I finished this project just for [High Seas](https://highseas.hackclub.com), that was deadass my only motivation.

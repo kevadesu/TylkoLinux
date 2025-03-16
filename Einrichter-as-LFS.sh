@@ -35,7 +35,7 @@ main() {
     read -p "Pending step: Installing cross toolchain and packages. Run, skip or quit?" OPT
     case "$OPT" in
         R)
-            eal.install.cross-toolchain
+            eal.install.toolchain
             ;;
         S)
             echo "Step skipped."
@@ -110,10 +110,6 @@ function eal.emergencyAlert() {
 function eal.setup.toolchain() {
     echo -e "I: The detected system triplet is $(/usr/bin/gcc -dumpmachine)."
     export LFS_TGT=$(/usr/bin/gcc -dumpmachine)
-    echo 
-}
-
-function eal.install.cross-toolchain() {
     cd $LFS/sources/
     EIR_PKG=binutils
     eal.notification.extracting
@@ -169,7 +165,7 @@ function eal.install.cross-toolchain() {
                 --disable-libstdcxx                         \
                 --enable-languages=c,c++
             eal.notification.compiling
-            make
+            make || eal.kill "At GCC - Pass 1"
             eal.notification.installing
             make install
             cd ..
@@ -186,15 +182,15 @@ function eal.install.cross-toolchain() {
         popd
         EIR_PKG=glibc
         eal.notification.extracting
-        echo -e "I: -- The installer is creating a symbolic link for LSB compliance. Depending on architecture, it may also create a compatibility symbolic link for proper operation of the dynamic library loader. --"
-        case $(uname -m) in
-            i?86)   ln -sfv ld-linux.so.2 $LFS/lib/ld-lsb.so.3
-            ;;
-            x86_64) ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64
-                    ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64/ld-lsb-x86-64.so.3
-            ;;
-        esac
         pushd $LFS/sources/glibc/
+            echo -e "I: -- The installer is creating a symbolic link for LSB compliance. Depending on architecture, it may also create a compatibility symbolic link for proper operation of the dynamic library loader. --"
+            case $(uname -m) in
+                i?86)   ln -sfv ld-linux.so.2 $LFS/lib/ld-lsb.so.3
+                ;;
+                x86_64) ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64
+                        ln -sfv ../lib/ld-linux-x86-64.so.2 $LFS/lib64/ld-lsb-x86-64.so.3
+                ;;
+            esac
             echo -e "I: -- The installer is now patching glibc. --"
             patch -Np1 -i ../glibc-2.40-fhs-1.patch
             mkdir -v build
@@ -205,7 +201,7 @@ function eal.install.cross-toolchain() {
                 --prefix=/usr                       \
                 --host=$LFS_TGT                      \
                 --build=$(../scripts/config.guess)    \
-                --enable-kernel=5.4                    \
+                --enable-kernel=4.19                   \
                 --with-headers=$LFS/usr/include         \
                 --disable-nscd                           \
                 libc_cv_slibdir=/usr/lib
@@ -253,6 +249,16 @@ function eal.install.cross-toolchain() {
             make DESTDIR=$LFS install
             rm -v $LFS/usr/lib/lib{stdc++{,exp,fs},supc++}.la
         popd
+    popd
+}
+
+eal.kill() {
+    echo "KILL! | $1 | Quitting."
+    exit 1
+}
+
+function eal.install.toolchain() {
+    pushd $LFS/sources/
         EIR_PKG=M4
         pushd $LFS/sources/m4/
             eal.notification.buildconf
@@ -268,11 +274,11 @@ function eal.install.cross-toolchain() {
         pushd $LFS/sources/ncurses
             sed -i s/mawk// configure
             mkdir build
-            cd build
-            ../configure
-            make -C include
-            make -C progs tic
-            cd ..
+            pushd build
+                ../configure AWK=gawk
+                make -C include
+                make -C progs tic
+            popd
             eal.notification.buildconf
             ./configure --prefix=/usr                \
                         --host=$LFS_TGT               \
@@ -289,7 +295,7 @@ function eal.install.cross-toolchain() {
             make
             eal.notification.installing
             make DESTDIR=$LFS TIC_PATH=$(pwd)/build/progs/tic install
-            ln -sv libncursesw.so $LFS/usr/lib/libncurses.so
+            ln -sv lib/libncursesw.so $LFS/usr/lib/libncurses.so
             sed -e 's/^#if.*XOPEN.*$/#if 1/' \
                -i $LFS/usr/include/curses.h
         popd

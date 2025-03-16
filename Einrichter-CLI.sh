@@ -1,13 +1,23 @@
 #!/bin/bash
 if [ "$EUID" -ne 0 ]
-then echo "Please run Einrichter (TylkoLinux) using administrative permissions."
-exit
+    then echo "Please run Einrichter (TylkoLinux) using administrative permissions."
+    exit
 fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 EINRICHTER_VER=0.3.0
 
 function booter() {
+    read -p "[?] The LFS variable has been set to $LFS, which means that it'll be the installation to be modified. If this is what you wanted, continue. If not, exit the installer immediately, as there may be a risk of messing up your main installation. Continue? [y/n]: " WOPT
+    case "$WOPT" in
+        y|Y|Yes|yes|YES)
+            printf ""
+        ;;
+        *)
+            echo "[i] If running through sudo or other authentication agent, make sure to append \"LFS=(path to install)\" before the command to set the correct path."
+            exit 1
+        ;;
+    esac
     einrichter.colours
     echo "Einrichter - TylkoLinux Installer Shell $EINRICHTER_VER
 The script is located at $SCRIPT_DIR
@@ -273,7 +283,7 @@ function einrichter.backup.create() {
     echo -e "${BRed}[?] Variable LFS points to ${LFS}. This needs to point to the target LFS system.
 If this does NOT point to the LFS directory, EXIT NOW AND SET THE VARIABLE. This will otherwise
 DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED.${Color_Off}"
-    read -p "[?] Continue? (y/n) " OPT
+    read -p "[?] Continue? [y/n]: " OPT
     if [ "$OPT" = "y" ]; then echo "Continuing..."; else exit 1; fi
     echo "[i] Unmounting the virtual file systems..."
     mountpoint -q $LFS/dev/shm && umount $LFS/dev/shm
@@ -290,7 +300,7 @@ function einrichter.backup.restore() {
     echo -e "${BRed}[?] Variable LFS points to ${LFS}. This needs to point to the target LFS system.
 If this does NOT point to the LFS directory, EXIT NOW AND SET THE VARIABLE. This will otherwise
 DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED.${Color_Off}"
-    read -p "[?] Continue? (y/n) " OPT
+    read -p "[?] Continue? [y/n]: " OPT
     echo "[i] Restoring from backup..."
     cd $LFS
     rm -rf ./*
@@ -300,201 +310,6 @@ DESTROY THE ENTIRE HOST SYSTEM. YOU ARE WARNED.${Color_Off}"
 
 function einrichter.installer.bg() {
     echo "E"
-}
-
-function einrichter.xr() {
-    echo "[i] Extracting and renaming ALL packages..."
-    sleep 0.5
-    pushd $LFS/sources/ || einrichter.error DIR404_SRC
-        tar -xvf gcc-14.2.0.tar.xz 
-        mv -v gcc-14.2.0 gcc
-        pushd $LFS/sources/gcc
-            tar -xf ../mpfr-4.2.1.tar.xz
-            mv -v mpfr-4.2.1 mpfr
-            tar -xf ../gmp-6.3.0.tar.xz
-            mv -v gmp-6.3.0 gmp
-            tar -xf ../mpc-1.3.1.tar.gz
-            mv -v mpc-1.3.1 mpc
-        popd
-        tar -xvf $LFS/sources/binutils-2.43.1.tar.xz
-        mv binutils-2.43.1 binutils
-        tar -xvf linux-6.10.5.tar.xz
-        mv -v linux-6.10.5 linux
-        tar -xvf glibc-2.40.tar.xz
-        mv -v glibc-2.40 glibc
-        tar -xvf coreutils-9.5.tar.xz
-        mv coreutils-9.5 coreutils
-        tar -xvf diffutils-3.10.tar.xz
-        mv diffutils-3.10 diffutils
-        tar -xvf file-5.45.tar.gz
-        mv file-5.45 file
-        tar -xvf m4-1.4.19.tar.xz
-        mv m4-1.4.19 m4
-        tar -xvf ncurses-6.5.tar.gz
-        mv ncurses-6.5 ncurses
-        tar -xvf bash-5.2.32.tar.gz
-        mv bash-5.2.32 bash
-        tar -xvf findutils-4.10.0.tar.xz
-        mv findutils-4.10.0 findutils
-        tar -xvf gawk-5.3.0.tar.*z
-        mv gawk-5.3.0 gawk
-        tar -xvf grep-3.11.tar.*z
-        mv grep-3.11 grep
-        tar -xvf gzip-1.13.tar.*z
-        mv gzip-1.13 gzip
-        tar -xvf make-4.4.1.tar.*z
-        mv make-4.4.1 make
-        tar -xvf patch-2.7.6.tar.*z
-        mv patch-2.7.6 patch
-        tar -xvf sed-4.9.tar.*z
-        mv sed-4.9 sed
-        tar -xvf tar-1.35*
-        mv tar-1.35 tar
-        tar -xvf xz-5.6.2.tar.*z
-        mv xz-5.6.2 xz
-        tar -xvf gettext*xz
-        mv gettext-0.22.5 gettext
-        tar -xvf bison*xz
-        mv bison-3.8.2 bison
-        tar -xvf perl*xz
-        mv perl-5.40.0 perl
-        tar -xvf Python*xz
-        mv Python-3.12.5 python
-        tar -xvf texinfo*xz
-        mv texinfo-7.1 texinfo
-        tar -xvf util-linux*.xz
-        mv util-linux-2.40.2 util-linux
-        tar -xvf man-pages-6.9.1.tar.xz
-        mv man-pages-6.9.1.tar.xz man-pages
-        tar -xvf iana-etc-20240806.tar.gz
-        tar -xvf zlib-1.3.1.tar.gz
-        mv zlib-1.3.1 zlib
-        tar -xvf bzip2-1.0.8.tar.gz
-        mv bzip2-1.0.8 bzip2
-        tar -xvf lz4-1.10.0.tar.gz
-        mv lz4-1.10.0 lz4
-        tar -xvf zstd-1.5.6.tar.gz
-        mv zstd-1.5.6 zstd
-        tar -xvf readline-8.2.13.tar.gz
-        mv readline-8.2.13 readline
-        tar -xvf bc-6.7.6.tar.xz
-        mv bc-6.7.6 bc
-        tar -xvf flex-2.6.4.tar.gz
-        mv flex-2.6.4 flex
-        tar -xvf tcl8.6.14-src.tar.gz
-        mv tcl8.6.14 tcl
-        tar -xvf expect5.45.4.tar.gz
-        mv expect5.45.4 expect
-        tar -xvf dejagnu-1.6.3.tar.gz
-        mv dejagnu-1.6.3 dejagnu
-        tar -xvf pkgconf-2.3.0.tar.xz
-        mv pkgconf-2.3.0 pkgconf
-        tar -xvf gmp-6.3.0.tar.xz
-        mv gmp-6.3.0 gmp
-        tar -xvf mpfr-4.2.1.tar.xz
-        mv mpfr-4.2.1 mpfr
-        tar -xvf mpc-1.3.1.tar.gz
-        mv mpc-1.3.1 mpc
-        tar -xvf attr-2.5.2.tar.gz
-        mv attr-2.5.2 attr
-        tar -xvf acl-2.3.2.tar.xz
-        mv acl-2.3.2 acl
-        tar -xvf libcap-2.70.tar.xz 
-        mv libcap-2.70 libcap
-        tar -xvf libxcrypt-4.4.36.tar.xz
-        mv libxcrypt-4.4.36 libxcrypt
-        tar -xvf shadow-4.16.0.tar.xz
-        mv shadow-4.16.0 shadow
-        tar -xvf psmisc-23.7.tar.xz
-        mv psmisc-23.7 psmisc
-        tar -xvf libtool-2.4.7.tar.xz
-        mv libtool-2.4.7 libtool
-        tar -xvf gdbm-1.24.tar.gz 
-        mv gdbm-1.24 gdbm
-        tar -xvf gperf-3.1.tar.gz; 
-        mv gperf-3.1 gperf
-        tar -xvf expat-2.6.4.tar.xz; 
-        mv expat-2.6.4 expat
-        tar -xvf inetutils-2.5.tar.xz 
-        mv inetutils-2.5 inetutils
-        tar -xvf less-661.tar.gz; 
-        mv less-661 less
-        tar -xvf XML-Parser-2.47.tar.gz; 
-        mv XML-Parser-2.47 XML-Parser
-        tar -xvf intltool-0.51.0.tar.gz; 
-        mv intltool-0.51.0 intltool
-        tar -xvf autoconf-2.72.tar.xz; 
-        tar -xvf automake-1.17.tar.xz; 
-        mv autoconf-2.72 autoconf; 
-        mv automake-1.17 automake
-        tar -xvf openssl-3.3.1.tar.gz; 
-        mv openssl-3.3.1 openssl
-        tar -xvf kmod-33.tar.xz; 
-        mv kmod-33 kmod
-        tar -xvf elfutils-0.191.tar.bz2; 
-        mv elfutils-0.191 elfutils
-        tar -xvf libffi-3.4.6.tar.gz; 
-        mv libffi-3.4.6 libffi
-        tar -xvf flit_core-3.9.0.tar.gz; 
-        mv flit_core-3.9.0 flit_core
-        tar -xvf wheel-0.44.0.tar.gz; 
-        mv wheel-0.44.0 wheel
-        tar -xvf setuptools-72.2.0.tar.gz; 
-        mv setuptools-72.2.0 setuptools
-        tar -xvf ninja-1.12.1.tar.gz; 
-        mv ninja-1.12.1 ninja
-		tar -xvf meson-1.5.1.tar.gz; 
-		mv meson-1.5.1 meson
-		tar -xvf check-0.15.2.tar.gz; 
-		mv check-0.15.2 check
-        tar -xvf groff-1.23.0.tar.gz; 
-        mv groff-1.23.0 groff
-        tar -xvf grub-2.12.tar.xz; 
-        mv grub-2.12 grub
-        tar -xvf iproute2-6.10.0.tar.xz; 
-        mv iproute2-6.10.0 iproute2
-        tar -xvf kbd-2.6.4.tar.xz; 
-        mv kbd-2.6.4 kbd
-        tar -xvf libpipeline-1.5.7.tar.gz; 
-        mv libpipeline-1.5.7 libpipeline
-        tar -xvf nano-8.1.tar.xz; 
-        mv nano-8.1 nano
-        tar -xvf MarkupSafe-2.1.5.tar.gz; 
-        mv MarkupSafe-2.1.5 MarkupSafe
-        tar -xvf jinja2-3.1.4.tar.gz; 
-        mv jinja2-3.1.4 jinja
-        tar -xvf systemd-256.4.tar.gz; 
-        mv systemd-256.4 systemd
-        tar -xvf dbus-1.14.10.tar.xz; 
-        mv dbus-1.14.10 dbus
-        tar -xvf man-db-2.12.1.tar.xz; 
-        mv man-db-2.12.1 man-db
-        tar -xvf procps-ng-4.0.4.tar.xz; 
-        mv procps-ng-4.0.4 procps-ng
-        tar -xvf e2fsprogs-1.47.1.tar.gz; 
-        mv e2fsprogs-1.47.1 e2fsprogs
-        tar -xvf git-2.48.1.tar.xz
-        mv git-2.48.1 git
-        tar -xvf wget-1.24.5.tar.gz
-        mv wget-1.24.5 wget
-        tar -xvf p11-kit-0.25.5.tar.xz
-        mv p11-kit-0.25.5 p11-kit
-        tar -xvf make-ca-1.14.tar.gz
-        mv make-ca-1.14 make-ca
-        tar -xvf libtasn1-4.19.0.tar.gz
-        mv libtasn1-4.19.0 libtasn1
-        tar -xvf cpio-2.15.tar.bz2
-        mv cpio-2.15 cpio
-        tar -xvf hwdata-0.385.tar.gz
-        mv hwdata-0.385 hwdata
-        tar -xvf pciutils-3.13.0.tar.gz
-        mv pciutils-3.13.0 pciutils
-        tar -xvf libgpg-error-1.50.tar.bz2
-        mv libgpg-error-1.50 libgpg-error
-        tar -xvf libassuan-3.0.1.tar.bz2
-        mv libassuan-3.0.1 libassaun
-        tar -xvf gpgme-1.23.2.tar.bz2
-        mv gpgme-1.23.2 gpgme
 }
 
 function einrichter.add.fs() {

@@ -343,7 +343,7 @@ EOF
             unset ZONEINFO
             eic.system.build.tz() {
                 tzselect
-                read -p "[i] Type the timezone that has been outputted: (with the slash) " TZ
+                read -p "[i] Type the timezone that has been outputted (with the slash): " TZ
                 ln -sfv /usr/share/zoneinfo/$TZ /etc/localtime || eic.system.build.tz
             }
             eic.system-build.tz
@@ -482,7 +482,7 @@ EOF
             eic.system.build.expect.intervention() {
                 if [[ $(python3 -c 'from pty import spawn; spawn(["echo", "ok"])') != "ok" ]]; then
                     echo "[i] PS: The error is caused by the chroot environment not being set up for proper PTY operation."
-                    read -p "[!] Answer unexpected. Continue, enter shell or quit? [c/s/q] " OPT
+                    read -p "[!] Answer unexpected. Continue, enter shell or quit? [c/s/q]: " OPT
                     case "$OPT" in
                         c)
                             echo "OK!"
@@ -570,7 +570,7 @@ EOF
             eic.system.build.gmp.intervention() {
                 if [ ! "$GMP_CHECK" -ge "199" ]; then
                     echo "[i] PS: The check did not reach the minimum amount of passed tests required."
-                    read -p "[!] Answer unexpected. Continue, enter shell or quit? [c/s/q] " OPT
+                    read -p "[!] Answer unexpected. Continue, enter shell or quit? [c/s/q]: " OPT
                     case "$OPT" in
                         c)
                             echo "OK!"
@@ -724,7 +724,7 @@ function eic.system.build.gcc() {
                 -e '/GOTPCREL/d'              -i ../gcc/testsuite/gcc.target/i386/fentryname3.c
 
             eic.system.build.gcc.ask() {
-                read -p "Pending step: Running test suite. Run, skip or quit?" OPT
+                read -p "Pending step: Running test suite. Run, skip or quit? [R/S/Q]: " OPT
                 case "$OPT" in
                     R)
                         chown -R tester .
@@ -815,7 +815,7 @@ function eic.system.build.continue() {
                         --docdir=/usr/share/doc/gettext-0.22.5
             make 
             eic.system.build.continue.gettext.ask() {
-                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs) [R/S/Q]: " OPT
                 case "$OPT" in
                     R)
                         make check > /eilogs/8.33-gettext-test.log
@@ -840,7 +840,7 @@ function eic.system.build.continue() {
             ./configure --prefix=/usr --docdir=/usr/share/doc/bison-3.8.2
             make
             eic.system.build.continue.bison.ask() {
-                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs) [R/S/Q]: " OPT
                 case "$OPT" in
                     R)
                         make check > /eilogs/8.34-bison-test.log
@@ -875,7 +875,7 @@ function eic.system.build.continue() {
                         --docdir=/usr/share/doc/bash-5.2.32
             make
             eic.system.build.continue.bash.ask() {
-                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs) [R/S/Q]: " OPT
                 case "$OPT" in
                     R)
                         chown -R tester .
@@ -975,7 +975,7 @@ EOF
             make
             make install
             eic.system.build.continue.perl.ask() {
-                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs) [R/S/Q]: " OPT
                 case "$OPT" in
                     R)
                         TEST_JOBS=$(nproc) make test_harness > /eilogs/8.43-perl-test.log
@@ -1014,7 +1014,7 @@ EOF
             ./configure --prefix=/usr
             make
             eic.system.build.continue.autoconf.ask() {
-                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs) [R/S/Q]: " OPT
                 case "$OPT" in
                     R)
                         make check > /eilogs/8.46-autoconf-test.log
@@ -1038,7 +1038,7 @@ EOF
             ./configure --prefix=/usr --docdir=/usr/share/doc/automake-1.17
             make
             eic.system.build.continue.automake.ask() {
-                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs) [R/S/Q]: " OPT
                 case "$OPT" in
                     R)
                         make -j$(($(nproc)>4?$(nproc):4)) check > /eilogs/8.47-automake-test.log
@@ -1112,7 +1112,7 @@ EOF
                         --enable-optimizations
             make
             eic.system.build.continue.python.ask() {
-                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs) [R/S/Q]: " OPT
                 case "$OPT" in
                     R)
                         make test TESTOPTS="--timeout 120" > /eilogs/8.52-python-test.log
@@ -1259,7 +1259,7 @@ if ( j > 0 ) return j;\
             ./configure --prefix=/usr
             make
             eic.system.build.continue.make.ask() {
-                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs)" OPT
+                read -p "Pending step: Running test suite. Run, skip or quit? (~3 SBUs) [R/S/Q]: " OPT
                 case "$OPT" in
                     R)
                         chown -R tester .
@@ -1958,12 +1958,12 @@ MaxUse=$1" > /etc/systemd/coredump.conf.d/maxuse.conf
 
 function eic.linux.install() {
     pushd /sources/linux/
-        read -p "[i] In this section, it is recommended to have the TylkoLinux build/installation guide open and ready. [ENTER]"
+        read -p "[i] In this section, it is recommended to have the TylkoLinux build/installation guide open and ready. [ENTER]: "
         make mrproper
         # make menuconfig
         make
         make modules_install
-		read -p "[i] Mount boot partition? <Y/N>: " OPT
+		read -p "[i] Mount boot partition? [Y/N]: " OPT
 		case $OPT in
 			Y|y|Yes|yes|YES)
 		        mount /boot
@@ -2435,7 +2435,7 @@ EOF
             make
             make install
         popd
-        read -p "[?] Disable systemd-networkd? [Y/N]" OPT
+        read -p "[?] Disable systemd-networkd? [Y/N]: " OPT
         case "$OPT" in
             y|Y|Yes|yes|YES)
                 systemctl disable --now systemd-networkd
@@ -2848,7 +2848,7 @@ function eic.dnf4.install.DONOTUSE() {
 function eic.tdnf.install() {
     pushd /sources/
         echo "[?] Is RPM installed? Because if not, the packages will NOT install!"
-        read -p "[Y]es, it is. [N]o, it isn't." opt
+        read -p "[Y]es, it is. [N]o, it isn't. :" opt
         case "$opt" in
             Y|y|Yes|yes|YES)
                 echo "[i] Checking...."
@@ -2938,7 +2938,7 @@ function eic.error() {
             echo "[!] Directory /sources/ does NOT exist!"
         ;;
         RPM_NOT_INSTALLED)
-            echo "[!] RPM...is not installed."
+            echo "[!] RPM...is not installed. You liar."
             exit 1
         ;;
         *)

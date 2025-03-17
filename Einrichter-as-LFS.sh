@@ -320,7 +320,8 @@ function eal.notification.installing() {
     echo "I: -- The installer is now installing the package $EIR_PKG --" && sleep 0.2
 }
 function eal.notification.extracting() {
-    echo "I: -- The installer is now extracting the necessary archives for $EIR_PKG --" && sleep 0.2
+#   echo "I: -- The installer is now extracting the necessary archives for $EIR_PKG --" && sleep 0.2
+    echo "I: -- Assumes package is already extracted. --"
 }
 function eal.emergencyAlert() {
     echo -e "\a" && sleep 0.1 && echo -e "\07" && sleep 0.1 && tput bel

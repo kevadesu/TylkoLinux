@@ -28,7 +28,7 @@ Run einrichter.help for commands"
 }
 
 function main() {
-    read -p "einrichter> " Command_Input
+    read -p "$PWD:einrichter> " Command_Input
     $Command_Input
     main
 }

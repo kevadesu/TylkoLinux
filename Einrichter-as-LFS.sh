@@ -365,25 +365,25 @@ function eal.setup.toolchain() {
             cd       build
             eal.notification.buildconf
             ../configure                  \
-                --target=$LFS_TGT          \
-                --prefix=$LFS/tools         \
-                --with-glibc-version=2.40    \
-                --with-sysroot=$LFS           \
-                --with-newlib                  \
-                --without-headers               \
-                --enable-default-pie             \
-                --enable-default-ssp              \
-                --disable-nls                      \
-                --disable-shared                    \
-                --disable-multilib                   \
-                --disable-threads                     \
-                --disable-libatomic                    \
-                --disable-libgomp                       \
-                --disable-libquadmath                    \
-                --disable-libssp                          \
-                --disable-libvtv                           \
-                --disable-libstdcxx                         \
-                --enable-languages=c,c++
+                --target=$LFS_TGT         \
+                --prefix=$LFS/tools       \
+                --with-glibc-version=2.40 \
+                --with-sysroot=$LFS       \
+                --with-newlib             \
+                --without-headers         \
+                --enable-default-pie      \
+                --enable-default-ssp      \
+                --disable-nls             \
+                --disable-shared          \
+                --disable-multilib        \
+                --disable-threads         \
+                --disable-libatomic       \
+                --disable-libgomp         \
+                --disable-libquadmath     \
+                --disable-libssp          \
+                --disable-libvtv          \
+                --disable-libstdcxx       \
+                --enable-languages=c,c+
             eal.notification.compiling
             make || eal.kill "At GCC - Pass 1"
             eal.notification.installing

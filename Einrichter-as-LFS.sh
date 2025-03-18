@@ -383,7 +383,7 @@ function eal.setup.toolchain() {
                 --disable-libssp          \
                 --disable-libvtv          \
                 --disable-libstdcxx       \
-                --enable-languages=c,c+
+                --enable-languages=c,c++
             eal.notification.compiling
             make || eal.kill "At GCC - Pass 1"
             eal.notification.installing

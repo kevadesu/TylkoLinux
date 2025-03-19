@@ -94,14 +94,14 @@ function eal.setup.xr() {
     echo "[i] Extracting and renaming ALL packages..."
     sleep 0.5
     pushd $LFS/sources/ || einrichter.error DIR404_SRC
-        tar -xvf gcc-14.2.0.tar.xz 
+        tar -xvf gcc-14.2.0.tar.xz || eal.kill "Failed to extract GCC"
         mv -v gcc-14.2.0 gcc
-        pushd $LFS/sources/gcc
-            tar -xf ../mpfr-4.2.1.tar.xz
-            mv -v mpfr-4.2.1 mpfr
-            tar -xf ../gmp-6.3.0.tar.xz
+        pushd $LFS/sources/gcc || eal.kill "Failed to enter GCC source tree"
+            tar -xf ../mpfr-4.2.1.tar.xz || eal.kill "Failed to extract MPFR"
+            mv -v mpfr-4.2.1 mpfr 
+            tar -xf ../gmp-6.3.0.tar.xz || eal.kill "Failed to extract GMP"
             mv -v gmp-6.3.0 gmp
-            tar -xf ../mpc-1.3.1.tar.gz
+            tar -xf ../mpc-1.3.1.tar.gz || eal.kill "Failed to extract MPC"
             mv -v mpc-1.3.1 mpc
         popd
         tar -xvf $LFS/sources/binutils-2.43.1.tar.xz
@@ -231,10 +231,10 @@ function eal.setup.xr() {
         mv setuptools-72.2.0 setuptools
         tar -xvf ninja-1.12.1.tar.gz; 
         mv ninja-1.12.1 ninja
-		tar -xvf meson-1.5.1.tar.gz; 
-		mv meson-1.5.1 meson
-		tar -xvf check-0.15.2.tar.gz; 
-		mv check-0.15.2 check
+	tar -xvf meson-1.5.1.tar.gz; 
+	mv meson-1.5.1 meson
+	tar -xvf check-0.15.2.tar.gz; 
+	mv check-0.15.2 check
         tar -xvf groff-1.23.0.tar.gz; 
         mv groff-1.23.0 groff
         tar -xvf grub-2.12.tar.xz; 
@@ -334,24 +334,24 @@ function eal.setup.toolchain() {
     EIR_PKG=binutils
     eal.notification.extracting
     sleep 0.5
-    cd $LFS/sources/binutils/
-    mkdir -v build
-    cd       build
-    eal.notification.buildconf
-    sleep 0.5
-    ../configure --prefix=$LFS/tools \
-             --with-sysroot=$LFS      \
-             --target=$LFS_TGT         \
-             --disable-nls              \
-             --enable-gprofng=no         \
-             --disable-werror             \
-             --enable-new-dtags            \
-             --enable-default-hash-style=gnu
-    eal.notification.compiling
-    make
-    eal.notification.installing
-    make install
-    cd $LFS
+    pushd $LFS/sources/binutils/
+        mkdir -v build
+        cd       build
+        eal.notification.buildconf
+        sleep 0.5
+	../configure --prefix=$LFS/tools \
+             --with-sysroot=$LFS \
+             --target=$LFS_TGT   \
+             --disable-nls       \
+             --enable-gprofng=no \
+             --disable-werror    \
+             --enable-new-dtags  \
+             --enable-default-hash-style=gnu || eal.kill "At configuring compilation"
+        eal.notification.compiling
+        make || eal.kill "At compiling Binutils"
+        eal.notification.installing
+        make install
+    popd
     eal.notification.extracting
     pushd $LFS/sources/
         pushd $LFS/sources/gcc/

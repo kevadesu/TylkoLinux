@@ -1,5 +1,21 @@
 #!/bin/bash
 
+function eal.debug.buildBash() {
+    EIR_PKG=bash
+    pushd $LFS/sources/bash
+        eal.notification.buildconf
+        ./configure --prefix=/usr                      \
+                    --build=$(sh support/config.guess)  \
+                    --host=$LFS_TGT                      \
+                    --without-bash-malloc || eal.kill "At bash - compilation configuration"
+        eal.notification.compiling
+        make || eal.kill "At bash - compilation"
+        eal.notification.installing
+        make DESTDIR=$LFS install || eal.kill "At bash - installation"
+        ln -sv bash $LFS/bin/sh
+    popd
+}
+
 main() {
     read -p "Attempting to modify installation at $LFS. Is this correct? (y/n): " WOPT
     case "$WOPT" in
@@ -497,25 +513,25 @@ function eal.install.toolchain() {
             mkdir build
             pushd build
                 ../configure AWK=gawk
-                make -C include || eal.exit "At ncurses - command \"make -C include\""
-                make -C progs tic || eal.exit "At ncurses - command \"make -C progs tic\""
+                make -C include || eal.kill "At ncurses - command \"make -C include\""
+                make -C progs tic || eal.kill "At ncurses - command \"make -C progs tic\""
             popd
             eal.notification.buildconf
             ./configure --prefix=/usr                \
-                        --host=$LFS_TGT               \
-                        --build=$(./config.guess)      \
-                        --mandir=/usr/share/man         \
-                        --with-manpage-format=normal     \
-                        --with-shared                     \
-                        --without-normal                   \
-                        --with-cxx-shared                   \
-                        --without-debug                      \
-                        --without-ada                         \
-                        --disable-stripping || eal.exit "At ncurses - compilation configuration"
+                        --host=$LFS_TGT              \
+                        --build=$(./config.guess)    \
+                        --mandir=/usr/share/man      \
+                        --with-manpage-format=normal \
+                        --with-shared                \
+                        --without-normal             \
+                        --with-cxx-shared            \
+                        --without-debug              \
+                        --without-ada                \
+                        --disable-stripping || eal.kill "At ncurses - compilation configuration"
             eal.notification.compiling
-            make || eal.exit "At ncurses - compilation"
+            make || eal.kill "At ncurses - compilation"
             eal.notification.installing
-            make DESTDIR=$LFS TIC_PATH=$(pwd)/build/progs/tic install || eal.exit "At ncurses - installation"
+            make DESTDIR=$LFS TIC_PATH=$(pwd)/build/progs/tic install || eal.kill "At ncurses - installation"
             ln -sv lib/libncursesw.so $LFS/usr/lib/libncurses.so
             sed -e 's/^#if.*XOPEN.*$/#if 1/' \
                -i $LFS/usr/include/curses.h
@@ -526,11 +542,11 @@ function eal.install.toolchain() {
             ./configure --prefix=/usr                      \
                         --build=$(sh support/config.guess)  \
                         --host=$LFS_TGT                      \
-                        --without-bash-malloc || eal.exit "At bash - compilation configuration"
+                        --without-bash-malloc || eal.kill "At bash - compilation configuration"
             eal.notification.compiling
-            make || eal.exit "At ncurses - compilation"
+            make || eal.kill "At ncurses - compilation"
             eal.notification.installing
-            make DESTDIR=$LFS install || eal.exit "At bash - installation"
+            make DESTDIR=$LFS install || eal.kill "At bash - installation"
             ln -sv bash $LFS/bin/sh
         popd
         EIR_PKG=coreutils
@@ -696,30 +712,13 @@ function eal.install.toolchain() {
                 --disable-libvtv                                               \
                 --enable-languages=c,c++
             eal.notification.compiling
-            make || eal.exit "At GCC - Pass 2"
+            make || eal.kill "At GCC - Pass 2"
             eal.notification.installing
-            make DESTDIR=$LFS install || eal.exit "At GCC - Pass 2 - Installation"
+            make DESTDIR=$LFS install || eal.kill "At GCC - Pass 2 - Installation"
             ln -sv gcc $LFS/usr/bin/cc
         popd
     popd
     echo "Cross-Toolchain installation has completed."
-}
-
-
-function eal.debug.buildBash() {
-    EIR_PKG=bash
-    pushd $LFS/sources/bash
-        eal.notification.buildconf
-        ./configure --prefix=/usr                      \
-                    --build=$(sh support/config.guess)  \
-                    --host=$LFS_TGT                      \
-                    --without-bash-malloc || eal.exit "At bash - compilation configuration"
-        eal.notification.compiling
-        make || eal.exit "At ncurses - compilation"
-        eal.notification.installing
-        make DESTDIR=$LFS install || eal.exit "At bash - installation"
-        ln -sv bash $LFS/bin/sh
-    popd
 }
 
 function eal.install.verify() {

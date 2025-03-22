@@ -526,11 +526,11 @@ function eal.install.toolchain() {
             ./configure --prefix=/usr                      \
                         --build=$(sh support/config.guess)  \
                         --host=$LFS_TGT                      \
-                        --without-bash-malloc
+                        --without-bash-malloc || eal.exit "At bash - compilation configuration"
             eal.notification.compiling
-            make
+            make || eal.exit "At ncurses - compilation"
             eal.notification.installing
-            make DESTDIR=$LFS install
+            make DESTDIR=$LFS install || eal.exit "At bash - installation"
             ln -sv bash $LFS/bin/sh
         popd
         EIR_PKG=coreutils
@@ -705,6 +705,23 @@ function eal.install.toolchain() {
     echo "Cross-Toolchain installation has completed."
 }
 
+
+function eal.debug.buildBash() {
+    EIR_PKG=bash
+    pushd $LFS/sources/bash
+        eal.notification.buildconf
+        ./configure --prefix=/usr                      \
+                    --build=$(sh support/config.guess)  \
+                    --host=$LFS_TGT                      \
+                    --without-bash-malloc || eal.exit "At bash - compilation configuration"
+        eal.notification.compiling
+        make || eal.exit "At ncurses - compilation"
+        eal.notification.installing
+        make DESTDIR=$LFS install || eal.exit "At bash - installation"
+        ln -sv bash $LFS/bin/sh
+    popd
+}
+
 function eal.install.verify() {
     ver_check Binutils       $LFS/bin/ld                   2.43.1
     ver_check GCC            $LGS/bin/gcc                  14.2.0
@@ -744,4 +761,11 @@ ver_check()
 
 bail() { echo -e "${BRed}FATAL ${Color_Off}| $1"; exit 1; }
 
-main
+case "$@" in
+    debug.buildBash)
+        eal.debug.buildBash
+    ;;
+    *)
+        main
+    ;;
+esac

@@ -19,6 +19,7 @@ function booter() {
         ;;
     esac
     einrichter.colours
+    cd "$LFS" || einrichter.error D404_LFS
     echo "Einrichter - TylkoLinux Installer Shell $EINRICHTER_VER
 The script is located at $SCRIPT_DIR
 The LFS installation is located at $LFS
@@ -42,7 +43,7 @@ einrichter.installer.chroot - Enter the environment using chroot
 einrichter.help - Show this help dialog
 einrichter.backup.create - Create a backup of the system to the home folder
 einrichter.backup.restore - Restore the aforementioned backup
-einrichter.xr - Extracts everything in $LFS/sources/ and renames them to the same package name without the version number
+einrichter.xr - Extracts everything in $LFS/sources/ and renames them to the same package name without the version number (DEPRECATED)
 einrichter.add.fs - Adds the required stuff aswell
 exit - Exit the script
 For more information, see https://github.com/kevadesu/TylkoLinux"
@@ -204,11 +205,11 @@ function einrichter.installer.SafeUser() {
         x86_64) chown -v lfs $LFS/lib64 ;;
     esac
     echo -e "${BBlue}[i] ${Blue}Copying second installer to home directory of the lfs user...${Color_Off}"
-    cp $SCRIPT_DIR/Einrichter-as-LFS.sh /home/lfs/
+    cp $SCRIPT_DIR/einrichter-build.sh /home/lfs/
     echo -e "${BBlue}[i] ${Blue}Changing the ownership of file to the lfs user...${Color_Off}"
-    chown -v lfs /home/lfs/Einrichter-as-LFS.sh
+    chown -v lfs /home/lfs/einrichter-build.sh
     echo -e "${BBlue}[i] ${Blue}Making the installer executable...${Color_Off}"
-    chmod -v +x /home/lfs/Einrichter-as-LFS.sh
+    chmod -v +x /home/lfs/einrichter-build.sh
     echo -e "${BBlue}[i] ${Blue}Moving the host's bash.bashrc file aside if found... (THIS WILL BE RESTORED AFTER THE END OF THE INSTALLATION!)${Color_Off}"
     [ ! -e /etc/bash.bashrc ] || mv -v /etc/bash.bashrc /etc/bash.bashrc.NOUSE
     echo -e "${BBlue}[i] ${Blue}Assigning permissions to the user lfs for the drive ${LFS}...${Color_Off}"
@@ -217,7 +218,7 @@ function einrichter.installer.SafeUser() {
       x86_64) chown -v lfs $LFS/lib64 ;;
     esac
     echo -e "${BBlue}[i] ${Blue}Attempting login as lfs...${Color_Off}"
-    echo -e "${BBlue}[i] ${Blue}You are about to switch to the LFS user. When you log in, run the Einrichter-as-LFS.sh script located in your home directory by typing \"./Einrichter-as-LFS.sh\".${Color_Off}"
+    echo -e "${BBlue}[i] ${Blue}You are about to switch to the LFS user. When you log in, run the einrichter-build.sh script located in your home directory by typing \"./einrichter-build.sh\".${Color_Off}"
     echo -e "${BBlue}[i] ${Blue}From here on, you no longer need the installer to log in to the lfs user. In the future, just run \"su - lfs\", either in Einrichter or in shell. Only run this again if you want to re-own everything under the lfs user.${Color_Off}"
     su - lfs
     einrichter.installer.SafeUser.End
@@ -239,9 +240,9 @@ function einrichter.installer.chroot() {
                 x86_64) chown --from lfs -Rv root:root $LFS/lib64 || einrichter.error TEST_FAIL ;;
             esac
             echo -e "${BBlue}[i] ${Blue}Copying third installer to the root of ${LFS}...${Color_Off}"
-            cp $SCRIPT_DIR/Einrichter-in-chroot.sh $LFS/
+            cp $SCRIPT_DIR/einrichter-systemsetup.sh $LFS/
             echo -e "${BBlue}[i] ${Blue}Making the installer executable...${Color_Off}"
-            chmod +x $LFS/Einrichter-in-chroot.sh
+            chmod +x $LFS/einrichter-systemsetup.sh
         ;;
     esac
     echo -e "${BBlue}[i] ${Blue}Preparing the Virtual Kernel File Systems...${Color_Off}"
@@ -257,7 +258,7 @@ function einrichter.installer.chroot() {
         mount -vt tmpfs -o nosuid,nodev tmpfs $LFS/dev/shm
     fi
     echo -e "${BBlue}[i] ${Blue}Attempting chroot...${Color_Off}"
-    echo -e "${BBlue}[i] ${Blue}You are about to switch to the chroot environment. When you enter the chroot environment, run the Einrichter-in-chroot.sh script located in the root of the filesystem by typing \"/Einrichter-in-chroot.sh\".${Color_Off}"
+    echo -e "${BBlue}[i] ${Blue}You are about to switch to the chroot environment. When you enter the chroot environment, run the einrichter-systemsetup.sh script located in the root of the filesystem by typing \"/einrichter-systemsetup.sh\".${Color_Off}"
     chroot "$LFS" /usr/bin/env -i   \
         HOME=/root                   \
         TERM="$TERM"                  \
@@ -324,6 +325,9 @@ function einrichter.error() {
         ;;
         "PKG_DWD_FAIL")
             echo -e "${BRed}[!] ${Red}Downloading packages, patches and/or the package list . This could be an issue on either your side of the Installer's. Please report this error to the github.com/kevadesu/TylkoLinux repository.${Color_Off}"
+        ;;
+        "D404_LFS")
+            echo "${BRed}[!] ${Red}Directory /sources/ does NOT exist!"
         ;;
         "D404_SRC")
             echo "${BRed}[!] ${Red}Directory /sources/ does NOT exist!"

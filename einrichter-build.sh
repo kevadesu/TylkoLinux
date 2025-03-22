@@ -93,7 +93,7 @@ main() {
 function eal.setup.xr() {
     echo "[i] Extracting and renaming ALL packages..."
     sleep 0.5
-    pushd $LFS/sources/ || einrichter.error DIR404_SRC
+    pushd $LFS/sources/ || bail "\$LFS/sources/ does not eixst."
         tar -xvf gcc-14.2.0.tar.xz || eal.kill "Failed to extract GCC"
         mv -v gcc-14.2.0 gcc
         pushd $LFS/sources/gcc || eal.kill "Failed to enter GCC source tree"
@@ -103,8 +103,9 @@ function eal.setup.xr() {
             mv -v gmp-6.3.0 gmp
             tar -xf ../mpc-1.3.1.tar.gz || eal.kill "Failed to extract MPC"
             mv -v mpc-1.3.1 mpc
+        # shellcheck disable=SC2164
         popd
-        tar -xvf $LFS/sources/binutils-2.43.1.tar.xz
+        tar -xvf "$LFS"/sources/binutils-2.43.1.tar.xz
         mv binutils-2.43.1 binutils
         tar -xvf linux-6.10.5.tar.xz
         mv -v linux-6.10.5 linux
@@ -496,8 +497,8 @@ function eal.install.toolchain() {
             mkdir build
             pushd build
                 ../configure AWK=gawk
-                make -C include
-                make -C progs tic
+                make -C include || eal.exit "At ncurses - command \"make -C include\""
+                make -C progs tic || eal.exit "At ncurses - command \"make -C progs tic\""
             popd
             eal.notification.buildconf
             ./configure --prefix=/usr                \
@@ -510,11 +511,11 @@ function eal.install.toolchain() {
                         --with-cxx-shared                   \
                         --without-debug                      \
                         --without-ada                         \
-                        --disable-stripping
+                        --disable-stripping || eal.exit "At ncurses - compilation configuration"
             eal.notification.compiling
-            make
+            make || eal.exit "At ncurses - compilation"
             eal.notification.installing
-            make DESTDIR=$LFS TIC_PATH=$(pwd)/build/progs/tic install
+            make DESTDIR=$LFS TIC_PATH=$(pwd)/build/progs/tic install || eal.exit "At ncurses - installation"
             ln -sv lib/libncursesw.so $LFS/usr/lib/libncurses.so
             sed -e 's/^#if.*XOPEN.*$/#if 1/' \
                -i $LFS/usr/include/curses.h
@@ -695,9 +696,9 @@ function eal.install.toolchain() {
                 --disable-libvtv                                               \
                 --enable-languages=c,c++
             eal.notification.compiling
-            make
+            make || eal.exit "At GCC - Pass 2"
             eal.notification.installing
-            make DESTDIR=$LFS install
+            make DESTDIR=$LFS install || eal.exit "At GCC - Pass 2 - Installation"
             ln -sv gcc $LFS/usr/bin/cc
         popd
     popd

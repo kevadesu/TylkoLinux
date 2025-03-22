@@ -18,7 +18,7 @@ echo "PATH=/usr/bin:/usr/local/bin:/usr/sbin" > /etc/environment
 chmod 755 /bin/bash
 chown root:root /bin/bash
 
-echo "Switched to Einrichter-in-chroot mode. Type eic.help for list of commands, exit to exit."
+echo "Entered einrichter-systemsetup. Type eic.help for list of commands, exit to exit."
 
 function main() {
     read -p "einrichter/eic> " OPT

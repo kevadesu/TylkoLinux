@@ -239,12 +239,12 @@ function einrichter.installer.chroot() {
             case $(uname -m) in
                 x86_64) chown --from lfs -Rv root:root $LFS/lib64 || einrichter.error TEST_FAIL ;;
             esac
-            echo -e "${BBlue}[i] ${Blue}Copying third installer to the root of ${LFS}...${Color_Off}"
-            cp $SCRIPT_DIR/einrichter-systemsetup.sh $LFS/
-            echo -e "${BBlue}[i] ${Blue}Making the installer executable...${Color_Off}"
-            chmod +x $LFS/einrichter-systemsetup.sh
         ;;
     esac
+    echo -e "${BBlue}[i] ${Blue}Copying third installer to the root of ${LFS}...${Color_Off}"
+    cp $SCRIPT_DIR/einrichter-systemsetup.sh $LFS/
+    echo -e "${BBlue}[i] ${Blue}Making the installer executable...${Color_Off}"
+    chmod +x $LFS/einrichter-systemsetup.sh
     echo -e "${BBlue}[i] ${Blue}Preparing the Virtual Kernel File Systems...${Color_Off}"
     mkdir -pv $LFS/{dev,proc,sys,run}
     mount -v --bind /dev $LFS/dev
@@ -273,9 +273,9 @@ function einrichter.installer.chroot() {
 
 function einrichter.installer.chroot.end() {
     echo -e "[i] Unmounting virtual file system..."
-    mountpoint -q $LFS/dev/shm && umount $LFS/dev/shm
-    umount $LFS/dev/pts
-    umount $LFS/{sys,proc,run,dev}
+    mountpoint $LFS/dev/shm && umount -v $LFS/dev/shm
+    umount -v $LFS/dev/pts
+    umount -v $LFS/{sys,proc,run,dev}
     echo -e "[i] Finished section installer.chroot"
 
 }
